@@ -1,0 +1,508 @@
+import { Confession, Resource, Opportunity, EventItem, RuleItem, CommunityStat } from "./types";
+
+export const COMMUNITY_STATS: CommunityStat[] = [
+  {
+    label: "Active Engineers",
+    value: "4,850+",
+    subtext: "Across 4 batches & alumni",
+    iconName: "Users",
+  },
+  {
+    label: "Anonymous Confessions",
+    value: "1,420+",
+    subtext: "99.4% wholesome & unfiltered",
+    iconName: "MessageSquareQuote",
+  },
+  {
+    label: "Curated Resources",
+    value: "890+",
+    subtext: "PYQs, practicals & notes",
+    iconName: "FileCode2",
+  },
+  {
+    label: "Opportunities Bagged",
+    value: "320+",
+    subtext: "Internships & hackathon wins",
+    iconName: "Sparkles",
+  },
+];
+
+export const MOCK_CONFESSIONS: Confession[] = [
+  {
+    id: "conf-1",
+    alias: "BitwiseWanderer",
+    batch: "CSE '25",
+    timestamp: "20 mins ago",
+    category: "Academics",
+    content:
+      "Spent 6 hours debugging a segmentation fault only to realize I allocated `sizeof(int)` instead of `sizeof(int*)` for my pointer array in the OS assignment. The professor said 'C builds character'. It only built chronic sleep deprivation.",
+    likes: 142,
+    comments: [
+      {
+        id: "c1",
+        author: "ValgrindFanatic",
+        text: "Always run with `-fsanitize=address` bro, saves your sanity every single time.",
+        timestamp: "15 mins ago",
+      },
+      {
+        id: "c2",
+        author: "GDB_Ghost",
+        text: "Wait till you meet Distributed Systems deadlock detection in Sem 6.",
+        timestamp: "8 mins ago",
+      },
+    ],
+    isTrending: true,
+    tags: ["#OperatingSystems", "#CProgramming", "#Deadlines", "#LabLife"],
+  },
+  {
+    id: "conf-2",
+    alias: "NightOwlCoder",
+    batch: "CSE '26",
+    timestamp: "1 hour ago",
+    category: "Placements",
+    content:
+      "Just cracked my dream Google Summer of Code proposal! 🚀 To everyone feeling imposter syndrome while staring at 500+ LeetCode solvers on LinkedIn: consistency in real GitHub repos always triumphs over memorized algorithm tricks. Keep pushing!",
+    likes: 389,
+    comments: [
+      {
+        id: "c3",
+        author: "GitCommitNoRegrets",
+        text: "Massive W! Which organization did you get selected for?",
+        timestamp: "45 mins ago",
+      },
+      {
+        id: "c4",
+        author: "JuniorInPain",
+        text: "Please upload your proposal structure to the /resources vault! Would help us a ton.",
+        timestamp: "30 mins ago",
+      },
+    ],
+    isTrending: true,
+    tags: ["#GSoC", "#OpenSource", "#Motivation", "#PlacementVictory"],
+  },
+  {
+    id: "conf-3",
+    alias: "NullPointerCupid",
+    batch: "CSE '27",
+    timestamp: "3 hours ago",
+    category: "Romance",
+    content:
+      "To the girl in 3rd row Lab 4 who always shares her hotspot when the campus Wi-Fi drops packet rates to 0%: you are singlehandedly maintaining my semester GPA. I wanted to thank you with a coffee but I got nervous and asked if you knew how to exit vim instead.",
+    likes: 274,
+    comments: [
+      {
+        id: "c5",
+        author: "EscColonWq",
+        text: "Most romantic CSE student interaction ever recorded.",
+        timestamp: "2 hours ago",
+      },
+      {
+        id: "c6",
+        author: "Lab4Assistant",
+        text: "I know who both of you are haha! Just say hi next Tuesday.",
+        timestamp: "1 hour ago",
+      },
+    ],
+    isTrending: true,
+    tags: ["#CampusRomance", "#Lab4", "#VimEscape", "#Wholesome"],
+  },
+  {
+    id: "conf-4",
+    alias: "MaggiChefAt3AM",
+    batch: "CSE '25",
+    timestamp: "5 hours ago",
+    category: "Hostel",
+    content:
+      "Hostel 3 kettle ban is a direct violation of engineering fundamental rights. You can take away our sleep, our attendance marks, and our weekend peace, but you cannot separate an engineer from 3 AM masala noodles before the DAA mid-sem exam.",
+    likes: 198,
+    comments: [
+      {
+        id: "c7",
+        author: "WardenHunter",
+        text: "Electric iron + aluminum foil method never gets caught by the wardens 😉",
+        timestamp: "4 hours ago",
+      },
+    ],
+    tags: ["#Hostel3", "#MidnightMaggi", "#DAAExam", "#EngineeringRights"],
+  },
+  {
+    id: "conf-5",
+    alias: "SyntaxErrorSurvivor",
+    batch: "CSE '26",
+    timestamp: "8 hours ago",
+    category: "Rants",
+    content:
+      "Why do professors teach slides from 2008 with Turbo C++ screenshots in lecture, and then set the end-semester lab test on Dockerized microservices and Kubernetes ingress controllers? Make it make sense.",
+    likes: 512,
+    comments: [
+      {
+        id: "c8",
+        author: "BorlandHater",
+        text: "The blue Turbo C++ screen will haunt 3 generations of our alumni.",
+        timestamp: "6 hours ago",
+      },
+      {
+        id: "c9",
+        author: "DevOpsGrind",
+        text: "Check out the Docker roadmap uploaded under /resources Sem 5, it saved our whole section.",
+        timestamp: "5 hours ago",
+      },
+    ],
+    isTrending: true,
+    tags: ["#CurriculumRant", "#TurboCIsDead", "#ModernTechNow"],
+  },
+  {
+    id: "conf-6",
+    alias: "CoffeeToCodeConverter",
+    batch: "CSE '27",
+    timestamp: "12 hours ago",
+    category: "Campus Life",
+    content:
+      "Shoutout to the library 2nd floor silent zone crew who don't talk for 6 hours straight, only communicate through Slack emoji reactions, and silently nod when someone finally compiles without warnings.",
+    likes: 165,
+    comments: [
+      {
+        id: "c10",
+        author: "Floor2Resident",
+        text: "Best study spot on campus. Just don't bring noisy mechanical blue switches there haha.",
+        timestamp: "10 hours ago",
+      },
+    ],
+    tags: ["#LibraryVibes", "#SilentGrind", "#CSECommunity"],
+  },
+];
+
+export const MOCK_RESOURCES: Resource[] = [
+  {
+    id: "res-1",
+    title: "Operating Systems Hand-Annotated Notes & CPU Scheduling Cheatsheet",
+    subjectCode: "CS-301",
+    subjectName: "Operating Systems",
+    semester: "Semester 5",
+    category: "Notes",
+    author: "Prof. Approved • Topper Handwritten",
+    verified: true,
+    format: "PDF",
+    fileSize: "14.2 MB",
+    downloads: 1840,
+    rating: 4.9,
+    linkUrl: "#",
+    description:
+      "Comprehensive notes covering Process Synchronization, Deadlocks, Memory Management, Paging algorithms, Virtual Memory, and Linux Kernel Internals with diagrammatic proofs.",
+  },
+  {
+    id: "res-2",
+    title: "Design & Analysis of Algorithms - 5 Years Solved PYQ Collection (2020-2025)",
+    subjectCode: "CS-401",
+    subjectName: "Algorithms (DAA)",
+    semester: "Semester 4",
+    category: "PYQ",
+    author: "Academic Cell Verified",
+    verified: true,
+    format: "PDF",
+    fileSize: "8.7 MB",
+    downloads: 2430,
+    rating: 5.0,
+    linkUrl: "#",
+    description:
+      "Solved past papers with detailed Master Theorem proofs, Dynamic Programming states, Greedy vs DP comparisons, and NP-Completeness reductions.",
+  },
+  {
+    id: "res-3",
+    title: "Database Management Systems (DBMS) - Complete SQL & PL/SQL Lab Practicals",
+    subjectCode: "CS-304",
+    subjectName: "Database Systems",
+    semester: "Semester 4",
+    category: "Practical",
+    author: "Lab Head Batch '24",
+    verified: true,
+    format: "Code",
+    fileSize: "3.1 MB",
+    downloads: 1290,
+    rating: 4.8,
+    linkUrl: "#",
+    description:
+      "All 12 prescribed lab experiments with PostgreSQL schemas, complex JOIN queries, triggers, stored procedures, and BCNF normalization breakdown.",
+  },
+  {
+    id: "res-4",
+    title: "Computer Networks & Socket Programming in C/Python Practical Manual",
+    subjectCode: "CS-502",
+    subjectName: "Computer Networks",
+    semester: "Semester 5",
+    category: "Practical",
+    author: "Networks Club Lead",
+    verified: true,
+    format: "ZIP",
+    fileSize: "6.4 MB",
+    downloads: 980,
+    rating: 4.7,
+    linkUrl: "#",
+    description:
+      "Client-server TCP/UDP chat code, sliding window simulations, Wireshark packet capture analysis guides, and subnetting calculation shortcuts.",
+  },
+  {
+    id: "res-5",
+    title: "Modern Full-Stack & System Design Placement Interview Roadmap 2026",
+    subjectCode: "CS-DEV",
+    subjectName: "Industry Readiness",
+    semester: "Semester 6-8",
+    category: "Roadmap",
+    author: "Alumni @ Uber & Microsoft",
+    verified: true,
+    format: "Drive",
+    fileSize: "Cloud Link",
+    downloads: 3120,
+    rating: 5.0,
+    linkUrl: "#",
+    description:
+      "Curated learning track covering Next.js, Redis caching, Message queues (Kafka), Database sharding, Rate limiters, and mock behavioral rounds.",
+  },
+  {
+    id: "res-6",
+    title: "Compiler Design Lab - Lex & Yacc Parser Generators Master Guide",
+    subjectCode: "CS-601",
+    subjectName: "Compiler Design",
+    semester: "Semester 6",
+    category: "Practical",
+    author: "Systems Research Group",
+    verified: true,
+    format: "Code",
+    fileSize: "4.5 MB",
+    downloads: 870,
+    rating: 4.8,
+    linkUrl: "#",
+    description:
+      "Lexical analyzers, LL(1) / LR(0) / LALR parser generators in Flex & Bison, Three-Address Code generation, and Symbol Table implementation.",
+  },
+];
+
+export const MOCK_OPPORTUNITIES: Opportunity[] = [
+  {
+    id: "opp-1",
+    title: "HackCampus 2026 - Pan-India AI & Systems Hackathon",
+    company: "Devfolio × CSE Community",
+    type: "Hackathon",
+    location: "Hybrid",
+    locationDetail: "Campus Main Auditorium + Virtual",
+    stipendOrPrize: "₹3,50,000 Prize Pool",
+    deadline: "March 15, 2026",
+    daysRemaining: 5,
+    tags: ["AI/ML", "Web3", "Distributed Systems", "Free Food & Swag"],
+    description:
+      "36-hour flagship hackathon bringing 500+ builders to create real-world solutions. Direct mentorship from Y-Combinator founders and fast-track interviews with sponsor partners.",
+    eligibility: "Open to all engineering undergrads & postgrads (Teams of 2-4)",
+    applyUrl: "https://devfolio.co",
+    isFeatured: true,
+  },
+  {
+    id: "opp-2",
+    title: "Software Engineering Summer Intern - Systems & Cloud Infrastructure",
+    company: "Razorpay / HyperVerge Labs",
+    type: "Internship",
+    location: "Remote",
+    locationDetail: "Bangalore / Remote flexibility",
+    stipendOrPrize: "₹65,000 / month",
+    deadline: "March 20, 2026",
+    daysRemaining: 10,
+    tags: ["Go", "Kubernetes", "PostgreSQL", "Paid Internship"],
+    description:
+      "Work alongside the core platform team building high-throughput payment settlement pipelines processing 10k+ requests/sec. Opportunity for pre-placement offer (PPO).",
+    eligibility: "Pre-final & Final year CSE/IT students with strong DSA & OS fundamentals.",
+    applyUrl: "https://razorpay.com/careers",
+    isFeatured: true,
+  },
+  {
+    id: "opp-3",
+    title: "Open Source Fellowship 2026 (Major League Hacking)",
+    company: "MLH × GitHub",
+    type: "Scholarship",
+    location: "Remote",
+    locationDetail: "Global Remote",
+    stipendOrPrize: "$3,000 Educational Grant",
+    deadline: "April 02, 2026",
+    daysRemaining: 22,
+    tags: ["Open Source", "Global Cohort", "Mentorship"],
+    description:
+      "A 12-week remote internship alternative where students contribute to critical open source repositories used by millions worldwide with dedicated 1-on-1 engineering mentors.",
+    eligibility: "Any enrolled student with working knowledge of Git and one modern language (JS/TS/Python/Go/Rust).",
+    applyUrl: "https://fellowship.mlh.io",
+    isFeatured: false,
+  },
+  {
+    id: "opp-4",
+    title: "Hands-on High Performance Computing & CUDA Acceleration Workshop",
+    company: "NVIDIA Student Ambassador Program",
+    type: "Workshop",
+    location: "On-site",
+    locationDetail: "Lab 2, Computer Center",
+    stipendOrPrize: "Free Certified Badge + GPU Credits",
+    deadline: "March 18, 2026",
+    daysRemaining: 8,
+    tags: ["CUDA", "C++", "Parallel Computing", "NVIDIA DLI"],
+    description:
+      "Deep dive into GPU architecture, memory coalescing, thread hierarchy, and accelerating matrix multiplication algorithms using CUDA C++ on NVIDIA A100 testbeds.",
+    eligibility: "CSE Sem 4+ with C/C++ familiarity. Limited to 60 seats.",
+    applyUrl: "#",
+    isFeatured: false,
+  },
+];
+
+export const MOCK_EVENTS: EventItem[] = [
+  {
+    id: "evt-1",
+    title: "Demystifying System Design: From Monolith to Distributed Microservices",
+    category: "Tech Talk",
+    date: "Aug 18, 2026",
+    month: "AUG",
+    day: "18",
+    time: "5:30 PM - 7:30 PM IST",
+    venue: "Auditorium Hall 2 & YouTube Live",
+    isOnline: true,
+    speaker: {
+      name: "Rohan Varma",
+      role: "Staff Infrastructure Engineer",
+      company: "Stripe (Ex-Campus Alumni '20)",
+    },
+    totalSeats: 250,
+    registeredCount: 198,
+    description:
+      "Learn how modern high-scale apps handle millions of concurrent connections, database caching with Redis, event-driven architectures, and how to ace LLD/HLD rounds.",
+    tags: ["System Design", "Distributed Systems", "Tech Talk"],
+  },
+  {
+    id: "evt-2",
+    title: "Open Source Sprint & First PR Workshop",
+    category: "Workshop",
+    date: "Aug 22, 2026",
+    month: "AUG",
+    day: "22",
+    time: "2:00 PM - 6:00 PM IST",
+    venue: "CSE Department Seminar Hall",
+    isOnline: false,
+    speaker: {
+      name: "Aditi Sen",
+      role: "GSoC Mentor & Core Contributor",
+      company: "Kubernetes SIG",
+    },
+    totalSeats: 80,
+    registeredCount: 65,
+    description:
+      "Bring your laptops! We will clone active open source repositories, set up local dev environments, find beginner-friendly 'good first issues', and submit live pull requests.",
+    tags: ["Git & GitHub", "GSoC", "Hands-on Workshop"],
+  },
+  {
+    id: "evt-3",
+    title: "CSE Community Night: Pitch, Roast & Pair Up",
+    category: "Meetup",
+    date: "Aug 29, 2026",
+    month: "AUG",
+    day: "29",
+    time: "6:30 PM - 9:00 PM IST",
+    venue: "Student Activity Center (SAC) Amphitheatre",
+    isOnline: false,
+    speaker: {
+      name: "Community Core Team",
+      role: "Ecosystem Leads",
+      company: "CSE Community",
+    },
+    totalSeats: 150,
+    registeredCount: 132,
+    description:
+      "Casual evening with fellow hackers: 2-minute project flash pitches, lighthearted coding roasts, teaming up for upcoming national hackathons, and complimentary pizzas & drinks.",
+    tags: ["Networking", "Hackathon Teaming", "Pizza & Chill"],
+  },
+];
+
+export const MOCK_RULES: RuleItem[] = [
+  {
+    number: "01",
+    title: "Absolute Respect & Zero Tolerance for Harassment",
+    tagline: "Disagree on architecture, never on human dignity.",
+    summary:
+      "Our community thrives on psychological safety. We encourage lively technical debates and campus commentary, but personal insults, discrimination, hate speech, bullying, or targeted harassment of any student or faculty will result in immediate permanent expulsion.",
+    dos: [
+      "Critique code, policies, or systemic campus issues constructively.",
+      "Support juniors asking basic programming questions without condescension.",
+      "Use inclusive, welcoming language across all discussion threads.",
+    ],
+    donts: [
+      "No targeting individuals with abusive language or malicious slander.",
+      "No discrimination based on gender, caste, race, orientation, or academic marks.",
+      "No trolling or creating hostile threads intended to demean peers.",
+    ],
+    consequence: "Zero tolerance. Immediate account suspension and IP block.",
+  },
+  {
+    number: "02",
+    title: "Ironclad Privacy & Strict Anti-Doxxing Policy",
+    tagline: "Protect anonymity. Respect everyone's boundaries.",
+    summary:
+      "Anonymity allows honest dialogue, but it must never be weaponized. Sharing private phone numbers, hostel room numbers, personal social media accounts, non-public photos, or identifying clues without explicit consent is strictly prohibited.",
+    dos: [
+      "Keep confessions and discussions generalized or role-based.",
+      "Blur out names, roll numbers, and contact details from any shared screenshots.",
+      "Immediately report posts containing accidental personal data disclosure.",
+    ],
+    donts: [
+      "Never post roll numbers, full names, phone numbers, or room numbers.",
+      "Never run witch-hunts to reveal the real identity of anonymous authors.",
+      "Do not upload unauthorized recordings or pictures of peers or staff.",
+    ],
+    consequence: "Immediate removal, forensic log blacklisting, and campus escalation if severe.",
+  },
+  {
+    number: "03",
+    title: "Authenticity, Accuracy & Academic Integrity",
+    tagline: "Share real knowledge. Keep resources genuine.",
+    summary:
+      "The resource vault powers thousands of students through exams and interviews. All uploaded notes, solutions, and PYQs must be accurate and legitimately created or shared for educational fair use. Plagiarism and malicious fake papers will be pruned.",
+    dos: [
+      "Upload verified handwritten notes, solution sheets, and helpful roadmaps.",
+      "Credit authors and professors when sharing curated lecture slides.",
+      "Report outdated or inaccurate academic materials so we can update them.",
+    ],
+    donts: [
+      "Do not upload malicious links, corrupted archives, or adware/malware tools.",
+      "Do not distribute live ongoing exam answer keys or compromise ongoing tests.",
+      "Do not post fabricated placement statistics or deceptive job offers.",
+    ],
+    consequence: "Resource deletion and permanent contributor privilege revocation.",
+  },
+  {
+    number: "04",
+    title: "Responsible Anonymous Expression",
+    tagline: "Anonymity is a privilege for honesty, not a shield for harm.",
+    summary:
+      "The /confessions feed exists for relatable humor, mental health venting, placement relief, and candid campus truths. Do not use anonymity to spread malicious misinformation, incite panics, or fabricate dangerous rumors.",
+    dos: [
+      "Share real student struggles, humorous campus incidents, and heartfelt advice.",
+      "Use the appropriate category tag (Academics, Hostel, Rants, Romance, Placements).",
+      "Engage in supportive discussions in the comment threads.",
+    ],
+    donts: [
+      "Do not post bomb threats, self-harm encouragement, or violence threats.",
+      "Do not fabricate sensationalist lies about campus emergencies or safety.",
+      "Do not spam the feed with repetitive bot-like promotional links.",
+    ],
+    consequence: "Automated filter quarantine and permanent post purge.",
+  },
+  {
+    number: "05",
+    title: "Transparent & Community-Driven Moderation",
+    tagline: "Fair rules, human oversight, open appeal channels.",
+    summary:
+      "Our moderation team comprises elected senior student leads and alumni advisors. Moderation decisions are taken objectively using community consensus. If you believe your post was unfairly flagged or hidden, our appeals channel is always accessible.",
+    dos: [
+      "Flag inappropriate content using the community report trigger.",
+      "Submit an appeal via the contact form if you believe a flag was in error.",
+      "Participate in semester rule reviews and community feedback townhalls.",
+    ],
+    donts: [
+      "Do not abuse the report button to silence differing technical opinions.",
+      "Do not harass moderators privately across campus channels.",
+      "Do not attempt to bypass automated keyword filters with obscure unicode tricks.",
+    ],
+    consequence: "Systematic review by the peer moderation council.",
+  },
+];
