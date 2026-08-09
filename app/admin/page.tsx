@@ -395,6 +395,13 @@ export default function AdminPage() {
   const pendingConfessionsCount = confessions.filter((c) => c.isApproved === false || c.status === "PENDING").length;
   const approvedConfessionsCount = confessions.filter((c) => c.isApproved === true || c.status === "APPROVED").length;
 
+  const filteredConfessions = confessions.filter((c) => {
+    const isPending = c.isApproved === false || c.status === "PENDING";
+    if (confessionFilter === "pending") return isPending;
+    if (confessionFilter === "approved") return !isPending;
+    return true;
+  });
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
       {/* Header Bar */}
