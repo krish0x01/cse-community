@@ -130,10 +130,15 @@ export default function AdminPage() {
           };
           registered_count?: number;
           registeredCount?: number;
+          total_seats?: number;
+          totalSeats?: number;
           max_capacity?: number;
           maxCapacity?: number;
           tags?: string[];
           description?: string;
+          status?: "PENDING" | "APPROVED" | "REJECTED";
+          is_approved?: boolean;
+          isApproved?: boolean;
         }
 
         const normalized: EventItem[] = (dataEvt.data as RawEvent[]).map((e) => {
@@ -142,6 +147,13 @@ export default function AdminPage() {
             ? d.toLocaleString("en-US", { month: "short" }).toUpperCase()
             : "OCT";
           const day = !isNaN(d.getTime()) ? String(d.getDate()).padStart(2, "0") : "24";
+
+          const isApproved = e.is_approved === true || e.status === "APPROVED" || e.isApproved === true;
+          const status: "PENDING" | "APPROVED" | "REJECTED" = isApproved
+            ? "APPROVED"
+            : e.status === "REJECTED"
+            ? "REJECTED"
+            : "PENDING";
 
           return {
             id: e.id,
@@ -158,10 +170,12 @@ export default function AdminPage() {
               role: e.speaker_role || "Tech Lead",
               company: e.speaker_company || "CSE Community",
             },
-            totalSeats: e.max_capacity ?? e.maxCapacity ?? 100,
+            totalSeats: e.total_seats ?? e.totalSeats ?? e.max_capacity ?? e.maxCapacity ?? 100,
             registeredCount: e.registered_count ?? e.registeredCount ?? 0,
             tags: e.tags || [],
             description: e.description || "",
+            status,
+            isApproved,
           };
         });
         setEvents(normalized);
@@ -484,32 +498,36 @@ export default function AdminPage() {
     );
   }
 
+  const isApprovedConfession = (c: Confession) => c.isApproved === true || c.status === "APPROVED";
+  const isApprovedOpportunity = (o: Opportunity) => o.isApproved === true || o.status === "APPROVED";
+  const isApprovedEvent = (e: EventItem) => e.isApproved === true || e.status === "APPROVED";
+
   const pendingReportsCount = reports.filter((r) => r.status === "PENDING_REVIEW").length;
-  const pendingConfessionsCount = confessions.filter((c) => c.isApproved === false || c.status === "PENDING").length;
-  const approvedConfessionsCount = confessions.filter((c) => c.isApproved === true || c.status === "APPROVED").length;
+  const pendingConfessionsCount = confessions.filter((c) => !isApprovedConfession(c)).length;
+  const approvedConfessionsCount = confessions.filter((c) => isApprovedConfession(c)).length;
 
-  const pendingOppsCount = opportunities.filter((o) => o.isApproved === false || o.status === "PENDING").length;
-  const approvedOppsCount = opportunities.filter((o) => o.isApproved === true || o.status === "APPROVED").length;
+  const pendingOppsCount = opportunities.filter((o) => !isApprovedOpportunity(o)).length;
+  const approvedOppsCount = opportunities.filter((o) => isApprovedOpportunity(o)).length;
 
-  const pendingEventsCount = events.filter((e) => e.isApproved === false || e.status === "PENDING").length;
-  const approvedEventsCount = events.filter((e) => e.isApproved === true || e.status === "APPROVED").length;
+  const pendingEventsCount = events.filter((e) => !isApprovedEvent(e)).length;
+  const approvedEventsCount = events.filter((e) => isApprovedEvent(e)).length;
 
   const filteredConfessions = confessions.filter((c) => {
-    const isPending = c.isApproved === false || c.status === "PENDING";
+    const isPending = !isApprovedConfession(c);
     if (confessionFilter === "pending") return isPending;
     if (confessionFilter === "approved") return !isPending;
     return true;
   });
 
   const filteredOpportunities = opportunities.filter((o) => {
-    const isPending = o.isApproved === false || o.status === "PENDING";
+    const isPending = !isApprovedOpportunity(o);
     if (oppFilter === "pending") return isPending;
     if (oppFilter === "approved") return !isPending;
     return true;
   });
 
   const filteredEvents = events.filter((e) => {
-    const isPending = e.isApproved === false || e.status === "PENDING";
+    const isPending = !isApprovedEvent(e);
     if (eventFilter === "pending") return isPending;
     if (eventFilter === "approved") return !isPending;
     return true;
@@ -1092,7 +1110,7 @@ export default function AdminPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredOpportunities.map((opp) => {
-                const isPending = opp.isApproved === false || opp.status === "PENDING";
+                const isPending = !isApprovedOpportunity(opp);
 
                 return (
                   <div
@@ -1262,7 +1280,7 @@ export default function AdminPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredEvents.map((evt) => {
-                const isPending = evt.isApproved === false || evt.status === "PENDING";
+                const isPending = !isApprovedEvent(evt);
 
                 return (
                   <div
