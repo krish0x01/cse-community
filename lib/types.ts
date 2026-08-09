@@ -17,6 +17,8 @@ export interface Confession {
   comments: ConfessionComment[];
   isTrending?: boolean;
   tags: string[];
+  status?: "PENDING" | "APPROVED" | "REJECTED";
+  isApproved?: boolean;
 }
 
 export interface Resource {

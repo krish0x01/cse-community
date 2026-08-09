@@ -33,15 +33,34 @@ export async function PATCH(
   try {
     const confessionId = params.id;
     const body = await request.json();
-    const { isTrending } = body;
+    const { isTrending, status, isApproved } = body;
+
+    const updates: Record<string, unknown> = {};
+    if (isTrending !== undefined) {
+      updates.is_trending = Boolean(isTrending);
+    }
+    if (status !== undefined) {
+      updates.status = status;
+    }
+    if (isApproved !== undefined) {
+      updates.is_approved = Boolean(isApproved);
+      if (status === undefined) {
+        updates.status = isApproved ? "APPROVED" : "PENDING";
+      }
+    }
 
     if (!isSupabaseConfigured() || !supabase) {
-      return NextResponse.json({ success: true, id: confessionId, isTrending, source: "mock" });
+      return NextResponse.json({
+        success: true,
+        id: confessionId,
+        updates,
+        source: "mock",
+      });
     }
 
     const { data, error } = await supabase
       .from("confessions")
-      .update({ is_trending: Boolean(isTrending) })
+      .update(updates)
       .eq("id", confessionId)
       .select()
       .single();

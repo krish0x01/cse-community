@@ -76,24 +76,32 @@ export default function ConfessionsPage() {
             likes?: number;
             is_trending?: boolean;
             tags?: string[];
+            status?: string;
+            is_approved?: boolean;
             created_at?: string;
           }
           const raw = payload.new as RawInsert;
-          const newConfession: Confession = {
-            id: raw.id,
-            alias: raw.alias,
-            batch: raw.batch,
-            category: (raw.category as Confession["category"]) || "Academics",
-            content: raw.content,
-            likes: raw.likes ?? 0,
-            isTrending: raw.is_trending ?? false,
-            tags: raw.tags || [],
-            timestamp: "Just now",
-            comments: [],
-          };
+          const isApproved = raw.is_approved === true || raw.status === "APPROVED";
+          
+          if (isApproved) {
+            const newConfession: Confession = {
+              id: raw.id,
+              alias: raw.alias,
+              batch: raw.batch,
+              category: (raw.category as Confession["category"]) || "Academics",
+              content: raw.content,
+              likes: raw.likes ?? 0,
+              isTrending: raw.is_trending ?? false,
+              tags: raw.tags || [],
+              timestamp: "Just now",
+              comments: [],
+              status: "APPROVED",
+              isApproved: true,
+            };
 
-          setConfessions((prev) => [newConfession, ...prev.filter((c) => c.id !== newConfession.id)]);
-          setRealtimeEventsCount((c) => c + 1);
+            setConfessions((prev) => [newConfession, ...prev.filter((c) => c.id !== newConfession.id)]);
+            setRealtimeEventsCount((c) => c + 1);
+          }
         }
       )
       .on(
@@ -102,21 +110,57 @@ export default function ConfessionsPage() {
         (payload) => {
           interface RawUpdate {
             id: string;
+            alias?: string;
+            batch?: string;
+            category?: string;
+            content?: string;
             likes?: number;
             is_trending?: boolean;
+            status?: string;
+            is_approved?: boolean;
+            tags?: string[];
           }
           const updated = payload.new as RawUpdate;
-          setConfessions((prev) =>
-            prev.map((c) =>
-              c.id === updated.id
-                ? {
-                    ...c,
-                    likes: updated.likes !== undefined ? updated.likes : c.likes,
-                    isTrending: updated.is_trending !== undefined ? updated.is_trending : c.isTrending,
-                  }
-                : c
-            )
-          );
+          const isNowApproved = updated.is_approved === true || updated.status === "APPROVED";
+
+          setConfessions((prev) => {
+            const exists = prev.some((c) => c.id === updated.id);
+            if (isNowApproved) {
+              if (exists) {
+                return prev.map((c) =>
+                  c.id === updated.id
+                    ? {
+                        ...c,
+                        likes: updated.likes !== undefined ? updated.likes : c.likes,
+                        isTrending: updated.is_trending !== undefined ? updated.is_trending : c.isTrending,
+                        status: (updated.status as Confession["status"]) || c.status,
+                        isApproved: true,
+                      }
+                    : c
+                );
+              } else {
+                // Newly authorized confession published live!
+                const newConf: Confession = {
+                  id: updated.id,
+                  alias: updated.alias || "Anonymous",
+                  batch: updated.batch || "CSE '26",
+                  category: (updated.category as Confession["category"]) || "Academics",
+                  content: updated.content || "",
+                  likes: updated.likes ?? 0,
+                  isTrending: updated.is_trending ?? false,
+                  tags: updated.tags || [],
+                  timestamp: "Just authorized",
+                  comments: [],
+                  status: "APPROVED",
+                  isApproved: true,
+                };
+                return [newConf, ...prev];
+              }
+            } else {
+              // If unapproved or rejected, remove from public feed
+              return prev.filter((c) => c.id !== updated.id);
+            }
+          });
           setRealtimeEventsCount((c) => c + 1);
         }
       )

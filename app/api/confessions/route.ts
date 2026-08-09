@@ -8,9 +8,15 @@ export async function GET(request: Request) {
     const category = searchParams.get("category");
     const search = searchParams.get("search");
     const sortBy = searchParams.get("sort") || "trending";
+    const includePending = searchParams.get("all") === "true" || searchParams.get("admin") === "true";
 
     if (!isSupabaseConfigured() || !supabase) {
       let data = [...MOCK_CONFESSIONS];
+
+      if (!includePending) {
+        data = data.filter((c) => c.isApproved === true || (c.status !== "PENDING" && c.isApproved !== false));
+      }
+
       if (category && category !== "All") {
         data = data.filter((c) => c.category === category);
       }
@@ -32,6 +38,10 @@ export async function GET(request: Request) {
     }
 
     let query = supabase.from("confessions").select("*, comments(*)");
+
+    if (!includePending) {
+      query = query.or("is_approved.eq.true,status.eq.APPROVED");
+    }
 
     if (category && category !== "All") {
       query = query.eq("category", category);
@@ -67,6 +77,9 @@ export async function GET(request: Request) {
       likes?: number;
       is_trending?: boolean;
       isTrending?: boolean;
+      status?: "PENDING" | "APPROVED" | "REJECTED";
+      is_approved?: boolean;
+      isApproved?: boolean;
       tags?: string[];
       created_at?: string;
       timestamp?: string;
@@ -81,6 +94,8 @@ export async function GET(request: Request) {
       content: item.content,
       likes: item.likes ?? 0,
       isTrending: item.is_trending ?? item.isTrending ?? false,
+      status: item.status || (item.is_approved ? "APPROVED" : "PENDING"),
+      isApproved: item.is_approved ?? (item.status === "APPROVED" || Boolean(item.isApproved)),
       tags: item.tags || [],
       timestamp: item.created_at
         ? new Date(item.created_at).toLocaleDateString("en-US", {
@@ -152,8 +167,10 @@ export async function POST(request: Request) {
           category,
           content: content.trim(),
           tags: parsedTags,
-          likes: 1,
+          likes: 0,
           is_trending: false,
+          status: "PENDING",
+          is_approved: false,
         },
       ])
       .select()
@@ -173,7 +190,7 @@ export async function POST(request: Request) {
       data,
       source: "supabase",
       isConnected: true,
-      message: "🎉 Confession posted live to Supabase database!",
+      message: "🛡️ Confession submitted for moderator authorization! It will go live once approved by the Council.",
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to post confession";

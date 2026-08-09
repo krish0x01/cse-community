@@ -197,11 +197,14 @@ function SubmitFormContent() {
 
           <div className="space-y-2">
             <h2 className="text-2xl font-bold text-white">
-              Submission Received Successfully!
+              {activeType === "confession"
+                ? "Confession Sent for Council Authorization! 🛡️"
+                : "Submission Received Successfully!"}
             </h2>
             <p className="text-sm text-slate-300 max-w-md mx-auto">
-              Your {activeType} has been processed. Anonymous metadata was verified and stripped.
-              It is now live in the community feed.
+              {activeType === "confession"
+                ? "Your confession was anonymized and placed in the Council Moderation Queue. It will be authorized by an admin and published to the live feed shortly."
+                : `Your ${activeType} has been processed and is now available in the community ecosystem.`}
             </p>
           </div>
 

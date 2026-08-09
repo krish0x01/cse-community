@@ -36,7 +36,8 @@ export default function AdminPage() {
   const [passcode, setPasscode] = useState("");
   const [authError, setAuthError] = useState("");
 
-  const [activeTab, setActiveTab] = useState<"reports" | "confessions" | "resources" | "opportunities" | "telemetry">("reports");
+  const [activeTab, setActiveTab] = useState<"reports" | "confessions" | "resources" | "opportunities" | "telemetry">("confessions");
+  const [confessionFilter, setConfessionFilter] = useState<"pending" | "approved" | "all">("pending");
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [confessions, setConfessions] = useState<Confession[]>(MOCK_CONFESSIONS);
   const [resources, setResources] = useState<Resource[]>(MOCK_RESOURCES);
@@ -56,8 +57,8 @@ export default function AdminPage() {
         setReports(dataRep.reports);
       }
 
-      // 2. Fetch Confessions
-      const resConf = await fetch("/api/confessions");
+      // 2. Fetch All Confessions (including pending)
+      const resConf = await fetch("/api/confessions?all=true");
       const dataConf = await resConf.json();
       if (dataConf.data) {
         setConfessions(dataConf.data);
@@ -141,6 +142,31 @@ export default function AdminPage() {
 
     try {
       await fetch(`/api/admin/confessions/${confessionId}`, { method: "DELETE" });
+    } catch {
+      // Optimistic update
+    }
+  };
+
+  // Action: Authorize / Approve Confession
+  const handleAuthorizeConfession = async (confessionId: string, approve: boolean) => {
+    const status = approve ? "APPROVED" : "REJECTED";
+    setConfessions((prev) =>
+      prev.map((c) =>
+        c.id === confessionId ? { ...c, isApproved: approve, status } : c
+      )
+    );
+    setToastMessage(
+      approve
+        ? "🎉 Confession AUTHORIZED & published live to community feed!"
+        : "Confession marked as rejected."
+    );
+
+    try {
+      await fetch(`/api/admin/confessions/${confessionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isApproved: approve, status }),
+      });
     } catch {
       // Optimistic update
     }
@@ -248,6 +274,8 @@ export default function AdminPage() {
   }
 
   const pendingReportsCount = reports.filter((r) => r.status === "PENDING_REVIEW").length;
+  const pendingConfessionsCount = confessions.filter((c) => c.isApproved === false || c.status === "PENDING").length;
+  const approvedConfessionsCount = confessions.filter((c) => c.isApproved === true || c.status === "APPROVED").length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
@@ -298,24 +326,24 @@ export default function AdminPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md">
           <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-            <span>Pending Reports</span>
+            <span>Pending Authorizations</span>
+            <ShieldAlert className={`w-4 h-4 ${pendingConfessionsCount > 0 ? "text-amber-400 animate-pulse" : "text-slate-500"}`} />
+          </div>
+          <div className={`text-2xl sm:text-3xl font-extrabold font-mono ${pendingConfessionsCount > 0 ? "text-amber-400" : "text-white"}`}>
+            {pendingConfessionsCount}
+          </div>
+          <span className="text-[11px] text-slate-500">Confessions awaiting approval</span>
+        </div>
+
+        <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md">
+          <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+            <span>Incident Reports</span>
             <ShieldAlert className={`w-4 h-4 ${pendingReportsCount > 0 ? "text-rose-400 animate-pulse" : "text-slate-500"}`} />
           </div>
           <div className={`text-2xl sm:text-3xl font-extrabold font-mono ${pendingReportsCount > 0 ? "text-rose-400" : "text-white"}`}>
             {pendingReportsCount}
           </div>
-          <span className="text-[11px] text-slate-500">Requires council review</span>
-        </div>
-
-        <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md">
-          <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-            <span>Total Confessions</span>
-            <MessageSquareQuote className="w-4 h-4 text-cyan-400" />
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold font-mono text-white">
-            {confessions.length}
-          </div>
-          <span className="text-[11px] text-slate-500">{confessions.filter((c) => c.isTrending).length} Trending</span>
+          <span className="text-[11px] text-slate-500">Requires rule review</span>
         </div>
 
         <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md">
@@ -332,7 +360,7 @@ export default function AdminPage() {
         <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md">
           <div className="flex items-center justify-between text-xs font-mono text-slate-400">
             <span>Active Radars</span>
-            <Sparkles className="w-4 h-4 text-amber-400" />
+            <Sparkles className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold font-mono text-white">
             {opportunities.length}
@@ -344,6 +372,18 @@ export default function AdminPage() {
       {/* Navigation Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto scrollbar-none">
         <button
+          onClick={() => setActiveTab("confessions")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+            activeTab === "confessions"
+              ? "bg-purple-950/80 text-purple-300 border border-purple-500/50 shadow-purple"
+              : "text-slate-400 hover:text-white"
+          }`}
+        >
+          <MessageSquareQuote className="w-4 h-4 text-purple-400" />
+          <span>Confessions Authorization ({pendingConfessionsCount} pending)</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab("reports")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
             activeTab === "reports"
@@ -353,18 +393,6 @@ export default function AdminPage() {
         >
           <ShieldAlert className="w-4 h-4 text-rose-400" />
           <span>Incident Reports ({pendingReportsCount})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("confessions")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-            activeTab === "confessions"
-              ? "bg-purple-950/80 text-purple-300 border border-purple-500/50 shadow-purple"
-              : "text-slate-400 hover:text-white"
-          }`}
-        >
-          <MessageSquareQuote className="w-4 h-4 text-purple-400" />
-          <span>Confessions Feed ({confessions.length})</span>
         </button>
 
         <button
@@ -404,7 +432,211 @@ export default function AdminPage() {
         </button>
       </div>
 
-      {/* TAB 1: REPORTS QUEUE */}
+      {/* TAB 1: CONFESSIONS AUTHORIZATION */}
+      {activeTab === "confessions" && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Sub-Filter Pills */}
+          <div className="flex items-center justify-between flex-wrap gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setConfessionFilter("pending")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                  confessionFilter === "pending"
+                    ? "bg-amber-950/80 text-amber-300 border border-amber-500/50 shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <span>⏳ Pending Authorization</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 text-[10px]">
+                  {pendingConfessionsCount}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setConfessionFilter("approved")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                  confessionFilter === "approved"
+                    ? "bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <span>✅ Live / Published</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px]">
+                  {approvedConfessionsCount}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setConfessionFilter("all")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                  confessionFilter === "all"
+                    ? "bg-slate-800 text-white border border-slate-700"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <span>📋 All ({confessions.length})</span>
+              </button>
+            </div>
+
+            <span className="text-xs text-slate-400 font-mono">
+              Moderation Policy: <strong>Authorization Required Prior to Publishing</strong>
+            </span>
+          </div>
+
+          {/* Confessions List */}
+          {confessions.filter((c) => {
+            const isPending = c.isApproved === false || c.status === "PENDING";
+            if (confessionFilter === "pending") return isPending;
+            if (confessionFilter === "approved") return !isPending;
+            return true;
+          }).length === 0 ? (
+            <div className="bg-slate-900/80 rounded-3xl p-12 text-center border border-slate-800 space-y-3">
+              <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
+              <h3 className="text-lg font-bold text-white">
+                {confessionFilter === "pending"
+                  ? "Zero Pending Confessions!"
+                  : "No Confessions Found"}
+              </h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                {confessionFilter === "pending"
+                  ? "All student submissions have been reviewed and authorized. New submissions will appear here for authorization."
+                  : "No confessions matched the current filter criteria."}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {confessions
+                .filter((c) => {
+                  const isPending = c.isApproved === false || c.status === "PENDING";
+                  if (confessionFilter === "pending") return isPending;
+                  if (confessionFilter === "approved") return !isPending;
+                  return true;
+                })
+                .map((conf) => {
+                  const isPending = conf.isApproved === false || conf.status === "PENDING";
+                  return (
+                    <div
+                      key={conf.id}
+                      className={`p-5 rounded-2xl border space-y-4 flex flex-col justify-between transition-all ${
+                        isPending
+                          ? "bg-slate-900/95 border-amber-500/50 shadow-md shadow-amber-500/5"
+                          : "bg-slate-900/80 border-slate-800 hover:border-slate-700"
+                      }`}
+                    >
+                      <div>
+                        {/* Header Badge Row */}
+                        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-bold text-cyan-300">
+                              {conf.alias} ({conf.batch})
+                            </span>
+                            <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                              {conf.category}
+                            </span>
+                            {isPending ? (
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-500/40 font-bold animate-pulse">
+                                ⏳ Pending Authorization
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40 font-semibold">
+                                ✅ Live & Published
+                              </span>
+                            )}
+                          </div>
+
+                          <span className="text-[11px] text-slate-500 font-mono">{conf.timestamp}</span>
+                        </div>
+
+                        {/* Confession Body */}
+                        <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                          {conf.content}
+                        </p>
+
+                        {/* Tags */}
+                        {conf.tags && conf.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-3">
+                            {conf.tags.map((tag, i) => (
+                              <span
+                                key={i}
+                                className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-950 text-slate-400 border border-slate-800"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Action Bar */}
+                      <div className="pt-3 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2">
+                        <div className="text-xs text-slate-400 font-mono">
+                          ❤️ {conf.likes} likes • 💬 {conf.comments?.length || 0} replies
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {isPending ? (
+                            /* PENDING ACTIONS: AUTHORIZE OR REJECT */
+                            <>
+                              <button
+                                onClick={() => handleAuthorizeConfession(conf.id, true)}
+                                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 transition-all active:scale-95"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Authorize & Publish ✓</span>
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteConfession(conf.id)}
+                                className="px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900 border border-rose-500/40 text-rose-300 text-xs font-semibold flex items-center gap-1 transition-colors"
+                                title="Reject and delete"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Reject</span>
+                              </button>
+                            </>
+                          ) : (
+                            /* APPROVED ACTIONS: FEATURE, REVOKE, DELETE */
+                            <>
+                              <button
+                                onClick={() => handleToggleTrending(conf.id, conf.isTrending)}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors ${
+                                  conf.isTrending
+                                    ? "bg-rose-950 text-rose-300 border border-rose-500/50"
+                                    : "bg-slate-800 text-slate-400 hover:text-white border border-slate-700"
+                                }`}
+                              >
+                                <Flame className={`w-3.5 h-3.5 ${conf.isTrending ? "fill-rose-400 text-rose-400" : ""}`} />
+                                <span>{conf.isTrending ? "Trending" : "Feature"}</span>
+                              </button>
+
+                              <button
+                                onClick={() => handleAuthorizeConfession(conf.id, false)}
+                                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-mono transition-colors"
+                                title="Revoke live status and send back to pending"
+                              >
+                                Revoke
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteConfession(conf.id)}
+                                className="p-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-500/30 transition-colors"
+                                title="Delete permanently"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 2: INCIDENT REPORTS QUEUE */}
       {activeTab === "reports" && (
         <div className="space-y-4 animate-fade-in">
           {reports.length === 0 ? (
@@ -485,67 +717,6 @@ export default function AdminPage() {
               ))}
             </div>
           )}
-        </div>
-      )}
-
-      {/* TAB 2: CONFESSIONS MODERATION */}
-      {activeTab === "confessions" && (
-        <div className="space-y-4 animate-fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {confessions.map((conf) => (
-              <div
-                key={conf.id}
-                className="bg-slate-900/85 p-5 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-cyan-300">
-                        {conf.alias} ({conf.batch})
-                      </span>
-                      <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                        {conf.category}
-                      </span>
-                    </div>
-
-                    <span className="text-[11px] text-slate-500 font-mono">{conf.timestamp}</span>
-                  </div>
-
-                  <p className="text-xs sm:text-sm text-slate-200 leading-relaxed line-clamp-4">
-                    {conf.content}
-                  </p>
-                </div>
-
-                <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
-                  <div className="text-xs text-slate-400 font-mono">
-                    ❤️ {conf.likes} likes • 💬 {conf.comments?.length || 0} replies
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleToggleTrending(conf.id, conf.isTrending)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors ${
-                        conf.isTrending
-                          ? "bg-rose-950 text-rose-300 border border-rose-500/50"
-                          : "bg-slate-800 text-slate-400 hover:text-white border border-slate-700"
-                      }`}
-                    >
-                      <Flame className={`w-3.5 h-3.5 ${conf.isTrending ? "fill-rose-400 text-rose-400" : ""}`} />
-                      <span>{conf.isTrending ? "Trending" : "Feature"}</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleDeleteConfession(conf.id)}
-                      className="p-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-500/30 transition-colors"
-                      title="Delete Confession"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       )}
 

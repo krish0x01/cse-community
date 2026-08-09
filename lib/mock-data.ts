@@ -169,6 +169,22 @@ export const MOCK_CONFESSIONS: Confession[] = [
       },
     ],
     tags: ["#LibraryVibes", "#SilentGrind", "#CSECommunity"],
+    status: "APPROVED",
+    isApproved: true,
+  },
+  {
+    id: "conf-pending-1",
+    alias: "TerminalTactician",
+    batch: "CSE '26",
+    timestamp: "Just submitted",
+    category: "Academics",
+    content:
+      "Is anyone forming a study squad for the upcoming Distributed Systems lab mid-terms? Let's connect on Discord or near the canteen!",
+    likes: 0,
+    comments: [],
+    tags: ["#DistributedSystems", "#StudyGroup", "#CSE26"],
+    status: "PENDING",
+    isApproved: false,
   },
 ];
 
