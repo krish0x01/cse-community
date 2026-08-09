@@ -10,7 +10,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/events",
     "/submit",
     "/rules",
-    "/login",
   ];
 
   return routes.map((route) => ({

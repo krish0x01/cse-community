@@ -10,7 +10,6 @@ import {
   Calendar,
   ShieldCheck,
   PlusCircle,
-  LogIn,
   Menu,
   X,
 } from "lucide-react";
@@ -100,20 +99,8 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Right Actions: Login & Submit Button */}
+          {/* Right Actions: Submit Button */}
           <div className="hidden sm:flex items-center gap-2.5">
-            <Link
-              href="/login"
-              className={`px-3.5 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ${
-                pathname === "/login"
-                  ? "bg-slate-800 text-white border border-slate-700"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/80 border border-slate-800"
-              }`}
-            >
-              <LogIn className="w-4 h-4 text-cyan-400" />
-              <span>Login</span>
-            </Link>
-
             <Link
               href="/submit"
               className="group relative inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-400 via-cyan-300 to-purple-400 hover:from-cyan-300 hover:to-purple-300 text-slate-950 font-bold text-sm shadow-cyan hover:shadow-cyan-lg transition-all duration-200 active:scale-95"
@@ -172,13 +159,6 @@ export default function Navbar() {
           </div>
 
           <div className="pt-4 border-t border-slate-800 flex flex-col gap-2">
-            <Link
-              href="/login"
-              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium border border-slate-700 text-slate-200 hover:bg-slate-800"
-            >
-              <LogIn className="w-4 h-4 text-cyan-400" />
-              <span>Login to Account</span>
-            </Link>
             <Link
               href="/submit"
               className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-cyan-400 to-purple-400 text-slate-950 shadow-cyan"

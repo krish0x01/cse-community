@@ -152,11 +152,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/login" className="text-slate-400 hover:text-cyan-300 transition-colors">
-                  Student Verification
-                </Link>
-              </li>
-              <li>
                 <Link href="/admin" className="text-slate-400 hover:text-purple-300 transition-colors flex items-center gap-1 font-mono text-xs">
                   <span>Council Dashboard (/admin)</span>
                 </Link>
