@@ -24,11 +24,11 @@ const OPPORTUNITY_TYPES = [
 const LOCATIONS = ["All Locations", "Remote", "On-site", "Hybrid"];
 
 export default function OpportunitiesPage() {
-  const [opportunities, setOpportunities] = useState<Opportunity[]>(MOCK_OPPORTUNITIES);
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [selectedType, setSelectedType] = useState("All Types");
   const [selectedLocation, setSelectedLocation] = useState("All Locations");
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean | null>(null);
 
   const fetchOpportunities = useCallback(async () => {
@@ -36,7 +36,7 @@ export default function OpportunitiesPage() {
     try {
       const res = await fetch("/api/opportunities");
       const json = await res.json();
-      if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+      if (json.data && Array.isArray(json.data)) {
         interface RawOpp {
           id: string;
           title: string;
@@ -76,10 +76,15 @@ export default function OpportunitiesPage() {
           isFeatured: o.is_featured ?? o.isFeatured ?? false,
         }));
         setOpportunities(normalized);
+      } else if (json.source === "mock") {
+        setOpportunities(MOCK_OPPORTUNITIES);
+      } else {
+        setOpportunities([]);
       }
-      setIsLiveConnected(json.source === "supabase");
+      setIsLiveConnected(json.isConnected || false);
     } catch {
       setIsLiveConnected(false);
+      setOpportunities([]);
     } finally {
       setLoading(false);
     }

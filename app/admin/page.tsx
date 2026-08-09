@@ -39,9 +39,9 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<"reports" | "confessions" | "resources" | "opportunities" | "telemetry">("confessions");
   const [confessionFilter, setConfessionFilter] = useState<"pending" | "approved" | "all">("pending");
   const [reports, setReports] = useState<ReportItem[]>([]);
-  const [confessions, setConfessions] = useState<Confession[]>(MOCK_CONFESSIONS);
-  const [resources, setResources] = useState<Resource[]>(MOCK_RESOURCES);
-  const [opportunities, setOpportunities] = useState<Opportunity[]>(MOCK_OPPORTUNITIES);
+  const [confessions, setConfessions] = useState<Confession[]>([]);
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSupabaseLive, setIsSupabaseLive] = useState(false);
@@ -53,30 +53,44 @@ export default function AdminPage() {
       // 1. Fetch Reports
       const resRep = await fetch("/api/admin/reports");
       const dataRep = await resRep.json();
-      if (dataRep.reports) {
+      if (dataRep.reports && Array.isArray(dataRep.reports)) {
         setReports(dataRep.reports);
+      } else {
+        setReports([]);
       }
 
       // 2. Fetch All Confessions (including pending)
       const resConf = await fetch("/api/confessions?all=true");
       const dataConf = await resConf.json();
-      if (dataConf.data) {
+      if (dataConf.data && Array.isArray(dataConf.data)) {
         setConfessions(dataConf.data);
+      } else if (dataConf.source === "mock") {
+        setConfessions(MOCK_CONFESSIONS);
+      } else {
+        setConfessions([]);
       }
       setIsSupabaseLive(dataConf.source === "supabase");
 
       // 3. Fetch Resources
       const resRes = await fetch("/api/resources");
       const dataRes = await resRes.json();
-      if (dataRes.data) {
+      if (dataRes.data && Array.isArray(dataRes.data)) {
         setResources(dataRes.data);
+      } else if (dataRes.source === "mock") {
+        setResources(MOCK_RESOURCES);
+      } else {
+        setResources([]);
       }
 
       // 4. Fetch Opportunities
       const resOpp = await fetch("/api/opportunities");
       const dataOpp = await resOpp.json();
-      if (dataOpp.data) {
+      if (dataOpp.data && Array.isArray(dataOpp.data)) {
         setOpportunities(dataOpp.data);
+      } else if (dataOpp.source === "mock") {
+        setOpportunities(MOCK_OPPORTUNITIES);
+      } else {
+        setOpportunities([]);
       }
     } catch {
       setToastMessage("⚠️ Failed to refresh some admin feeds");

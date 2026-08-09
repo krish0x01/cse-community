@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured, getServiceSupabase } from "@/lib/supabase";
 
 export async function DELETE(
   request: Request,
@@ -8,11 +8,16 @@ export async function DELETE(
   try {
     const confessionId = params.id;
 
-    if (!isSupabaseConfigured() || !supabase) {
+    if (!isSupabaseConfigured()) {
       return NextResponse.json({ success: true, id: confessionId, source: "mock" });
     }
 
-    const { error } = await supabase
+    const client = getServiceSupabase() || supabase;
+    if (!client) {
+      return NextResponse.json({ success: true, id: confessionId, source: "mock" });
+    }
+
+    const { error } = await client
       .from("confessions")
       .delete()
       .eq("id", confessionId);
@@ -49,7 +54,8 @@ export async function PATCH(
       }
     }
 
-    if (!isSupabaseConfigured() || !supabase) {
+    const client = getServiceSupabase() || supabase;
+    if (!client) {
       return NextResponse.json({
         success: true,
         id: confessionId,
@@ -58,7 +64,7 @@ export async function PATCH(
       });
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from("confessions")
       .update(updates)
       .eq("id", confessionId)

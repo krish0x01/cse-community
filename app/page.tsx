@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   MessageSquareQuote,
@@ -19,15 +20,55 @@ import {
   MOCK_EVENTS,
   COMMUNITY_STATS,
 } from "@/lib/mock-data";
+import { Confession, Resource, Opportunity } from "@/lib/types";
 import ConfessionCard from "@/components/ConfessionCard";
 import ResourceCard from "@/components/ResourceCard";
 import OpportunityCard from "@/components/OpportunityCard";
 import EventCard from "@/components/EventCard";
 
 export default function HomePage() {
-  const trendingConfessions = MOCK_CONFESSIONS.filter((c) => c.isTrending).slice(0, 3);
-  const featuredOpportunities = MOCK_OPPORTUNITIES.slice(0, 2);
-  const topResources = MOCK_RESOURCES.slice(0, 3);
+  const [confessions, setConfessions] = useState<Confession[]>([]);
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+
+  useEffect(() => {
+    async function loadLiveData() {
+      try {
+        const [resConf, resRes, resOpp] = await Promise.all([
+          fetch("/api/confessions").then((r) => r.json()).catch(() => null),
+          fetch("/api/resources").then((r) => r.json()).catch(() => null),
+          fetch("/api/opportunities").then((r) => r.json()).catch(() => null),
+        ]);
+
+        if (resConf?.data && Array.isArray(resConf.data)) {
+          setConfessions(resConf.data);
+        } else if (resConf?.source === "mock") {
+          setConfessions(MOCK_CONFESSIONS.filter((c) => c.isApproved === true || c.status === "APPROVED"));
+        }
+
+        if (resRes?.data && Array.isArray(resRes.data)) {
+          setResources(resRes.data);
+        } else if (resRes?.source === "mock") {
+          setResources(MOCK_RESOURCES);
+        }
+
+        if (resOpp?.data && Array.isArray(resOpp.data)) {
+          setOpportunities(resOpp.data);
+        } else if (resOpp?.source === "mock") {
+          setOpportunities(MOCK_OPPORTUNITIES);
+        }
+      } catch {
+        // Keep fallback
+      }
+    }
+    loadLiveData();
+  }, []);
+
+  const trendingConfessions = confessions.filter((c) => c.isTrending).slice(0, 3).length > 0
+    ? confessions.filter((c) => c.isTrending).slice(0, 3)
+    : confessions.slice(0, 3);
+  const featuredOpportunities = opportunities.slice(0, 2);
+  const topResources = resources.slice(0, 3);
   const upcomingEvents = MOCK_EVENTS.slice(0, 2);
 
   return (

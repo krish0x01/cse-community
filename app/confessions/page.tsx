@@ -29,11 +29,11 @@ const CATEGORIES = [
 ];
 
 export default function ConfessionsPage() {
-  const [confessions, setConfessions] = useState<Confession[]>(MOCK_CONFESSIONS);
+  const [confessions, setConfessions] = useState<Confession[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"trending" | "recent" | "liked">("trending");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean | null>(null);
   const [realtimeEventsCount, setRealtimeEventsCount] = useState(0);
 
@@ -42,12 +42,17 @@ export default function ConfessionsPage() {
     try {
       const res = await fetch("/api/confessions");
       const json = await res.json();
-      if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+      if (json.data && Array.isArray(json.data)) {
         setConfessions(json.data);
+      } else if (json.source === "mock") {
+        setConfessions(MOCK_CONFESSIONS.filter((c) => c.isApproved === true || c.status === "APPROVED"));
+      } else {
+        setConfessions([]);
       }
       setIsLiveConnected(json.isConnected || false);
     } catch {
       setIsLiveConnected(false);
+      setConfessions([]);
     } finally {
       setLoading(false);
     }
@@ -352,29 +357,70 @@ export default function ConfessionsPage() {
         </div>
       </div>
 
-      {/* Confession Cards Grid */}
-      {filteredConfessions.length > 0 ? (
+      {/* Confession Cards Grid / Loading Skeletons */}
+      {loading && confessions.length === 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <div
+              key={n}
+              className="bg-slate-900/60 rounded-3xl p-6 border border-slate-800 space-y-4 animate-pulse"
+            >
+              <div className="flex items-center justify-between">
+                <div className="h-4 w-28 bg-slate-800 rounded-full" />
+                <div className="h-4 w-16 bg-slate-800 rounded-full" />
+              </div>
+              <div className="space-y-2 py-2">
+                <div className="h-3.5 bg-slate-800 rounded w-full" />
+                <div className="h-3.5 bg-slate-800 rounded w-5/6" />
+                <div className="h-3.5 bg-slate-800 rounded w-4/6" />
+              </div>
+              <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                <div className="h-4 w-16 bg-slate-800 rounded-full" />
+                <div className="h-4 w-20 bg-slate-800 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : filteredConfessions.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredConfessions.map((confession) => (
             <ConfessionCard key={confession.id} confession={confession} />
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 bg-slate-900/80 rounded-3xl border border-slate-800 p-8 space-y-3">
+        <div className="text-center py-16 bg-slate-900/80 rounded-3xl border border-slate-800 p-8 space-y-4">
           <MessageSquareQuote className="w-12 h-12 text-slate-600 mx-auto" />
-          <h3 className="text-lg font-bold text-white">No confessions found</h3>
+          <h3 className="text-lg font-bold text-white">
+            {searchQuery || selectedCategory !== "All"
+              ? "No confessions found"
+              : "No Confessions in Feed Yet"}
+          </h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            No confessions matched your search &quot;{searchQuery}&quot; in category &quot;{selectedCategory}&quot;.
+            {searchQuery || selectedCategory !== "All"
+              ? `No confessions matched your search "${searchQuery}" in category "${selectedCategory}".`
+              : "Be the first to submit an anonymous confession for moderator authorization!"}
           </p>
-          <button
-            onClick={() => {
-              setSearchQuery("");
-              setSelectedCategory("All");
-            }}
-            className="px-4 py-2 rounded-full bg-slate-800 border border-cyan-500/30 text-cyan-300 text-xs font-semibold hover:bg-slate-700"
-          >
-            Clear Filters
-          </button>
+
+          <div className="flex items-center justify-center gap-3 pt-2">
+            {searchQuery || selectedCategory !== "All" ? (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedCategory("All");
+                }}
+                className="px-4 py-2 rounded-full bg-slate-800 border border-cyan-500/30 text-cyan-300 text-xs font-semibold hover:bg-slate-700"
+              >
+                Clear Filters
+              </button>
+            ) : (
+              <Link
+                href="/submit?type=confession"
+                className="px-5 py-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-purple-400 text-slate-950 font-bold text-xs shadow-cyan hover:from-cyan-300 hover:to-purple-300 transition-all"
+              >
+                Submit First Confession
+              </Link>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -36,11 +36,11 @@ const SEMESTERS = [
 ];
 
 export default function ResourcesPage() {
-  const [resources, setResources] = useState<Resource[]>(MOCK_RESOURCES);
+  const [resources, setResources] = useState<Resource[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All Resources");
   const [selectedSemester, setSelectedSemester] = useState("All Semesters");
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean | null>(null);
 
   const fetchResources = useCallback(async () => {
@@ -48,7 +48,7 @@ export default function ResourcesPage() {
     try {
       const res = await fetch("/api/resources");
       const json = await res.json();
-      if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+      if (json.data && Array.isArray(json.data)) {
         interface RawResource {
           id: string;
           title: string;
@@ -87,10 +87,15 @@ export default function ResourcesPage() {
           description: r.description || "",
         }));
         setResources(normalized);
+      } else if (json.source === "mock") {
+        setResources(MOCK_RESOURCES);
+      } else {
+        setResources([]);
       }
-      setIsLiveConnected(json.source === "supabase");
+      setIsLiveConnected(json.isConnected || false);
     } catch {
       setIsLiveConnected(false);
+      setResources([]);
     } finally {
       setLoading(false);
     }
