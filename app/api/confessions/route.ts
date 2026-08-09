@@ -58,7 +58,25 @@ export async function GET(request: Request) {
       query = query.order("created_at", { ascending: false });
     }
 
-    const { data, error } = await query;
+    let { data, error } = await query;
+    if (error && (error.message?.includes("is_approved") || error.message?.includes("schema cache"))) {
+      // Fallback: column doesn't exist in Supabase table yet, query without is_approved filter
+      let fallbackQuery = supabase.from("confessions").select("*, comments(*)");
+      if (category && category !== "All") fallbackQuery = fallbackQuery.eq("category", category);
+      if (search) fallbackQuery = fallbackQuery.ilike("content", `%${search}%`);
+      if (sortBy === "trending") {
+        fallbackQuery = fallbackQuery.order("is_trending", { ascending: false }).order("likes", { ascending: false });
+      } else if (sortBy === "liked") {
+        fallbackQuery = fallbackQuery.order("likes", { ascending: false });
+      } else {
+        fallbackQuery = fallbackQuery.order("created_at", { ascending: false });
+      }
+      const fallbackRes = await fallbackQuery;
+      if (!fallbackRes.error) {
+        data = fallbackRes.data;
+        error = null;
+      }
+    }
     if (error) throw error;
 
     // Normalize snake_case fields to camelCase
@@ -158,7 +176,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data, error } = await supabase
+    let insertRes = await supabase
       .from("confessions")
       .insert([
         {
@@ -176,18 +194,42 @@ export async function POST(request: Request) {
       .select()
       .single();
 
-    if (error) {
+    // Fallback if is_approved / status column has not been added to Supabase table yet
+    if (
+      insertRes.error &&
+      (insertRes.error.message?.includes("is_approved") ||
+        insertRes.error.message?.includes("status") ||
+        insertRes.error.message?.includes("schema cache"))
+    ) {
+      insertRes = await supabase
+        .from("confessions")
+        .insert([
+          {
+            alias: alias.trim(),
+            batch: batch || "CSE '26",
+            category,
+            content: content.trim(),
+            tags: parsedTags,
+            likes: 0,
+            is_trending: false,
+          },
+        ])
+        .select()
+        .single();
+    }
+
+    if (insertRes.error) {
       return NextResponse.json(
         {
-          error: `Supabase database error: ${error.message}. Did you run supabase/schema.sql in the SQL Editor?`,
-          details: error,
+          error: `Supabase database error: ${insertRes.error.message}. Please run supabase/migration_add_approval.sql in the Supabase SQL Editor.`,
+          details: insertRes.error,
         },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
-      data,
+      data: insertRes.data,
       source: "supabase",
       isConnected: true,
       message: "🛡️ Confession submitted for moderator authorization! It will go live once approved by the Council.",

@@ -18,6 +18,10 @@ CREATE TABLE IF NOT EXISTS public.confessions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Ensure columns exist if table was already created in an earlier version
+ALTER TABLE public.confessions ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'PENDING';
+ALTER TABLE public.confessions ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT false;
+
 -- 2. Create Confession Comments Table
 CREATE TABLE IF NOT EXISTS public.comments (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
