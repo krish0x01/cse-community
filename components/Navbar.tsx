@@ -67,7 +67,7 @@ export default function Navbar() {
                   CSE<span className="text-cyan-400">.</span>Community
                 </span>
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-purple-950/70 text-purple-300 border border-purple-500/30">
-                  v2.6
+                  v3.0
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 font-medium tracking-wide">
