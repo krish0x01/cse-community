@@ -17,9 +17,7 @@ import {
   Unlock,
   RefreshCw,
   ExternalLink,
-  ShieldCheck,
   Star,
-  MapPin,
   Clock,
   User,
 } from "lucide-react";

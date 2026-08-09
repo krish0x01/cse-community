@@ -130,6 +130,15 @@ export default function EventsPage() {
               <span>Host / Propose a Community Event</span>
             </Link>
 
+            <button
+              onClick={fetchEvents}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs sm:text-sm border border-slate-700 transition-colors"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${loading ? "animate-spin" : ""}`} />
+              <span>{loading ? "Refreshing..." : "Refresh Schedule"}</span>
+            </button>
+
             <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
               <CheckCircle className="w-3.5 h-3.5 text-cyan-400" />
               Free entry for all registered students
@@ -176,8 +185,22 @@ export default function EventsPage() {
         </div>
       </div>
 
-      {/* Events Grid */}
-      {filteredEvents.length > 0 ? (
+      {/* Events Grid / Loading Skeletons */}
+      {loading && events.length === 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((n) => (
+            <div
+              key={n}
+              className="bg-slate-900/60 rounded-3xl p-6 border border-slate-800 space-y-4 animate-pulse"
+            >
+              <div className="h-4 w-24 bg-slate-800 rounded-full" />
+              <div className="h-6 w-3/4 bg-slate-800 rounded" />
+              <div className="h-4 w-1/2 bg-slate-800 rounded" />
+              <div className="h-16 bg-slate-800/60 rounded-2xl" />
+            </div>
+          ))}
+        </div>
+      ) : filteredEvents.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEvents.map((event) => (
             <EventCard key={event.id} event={event} />
@@ -188,7 +211,9 @@ export default function EventsPage() {
           <CalendarIcon className="w-12 h-12 text-slate-600 mx-auto" />
           <h3 className="text-lg font-bold text-white">No events found</h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            No events matched your search query in {selectedCategory}.
+            {searchQuery || selectedCategory !== "All Events"
+              ? `No events matched your search query in ${selectedCategory}.`
+              : "No upcoming workshops or meetups scheduled at this moment."}
           </p>
           <button
             onClick={() => {
