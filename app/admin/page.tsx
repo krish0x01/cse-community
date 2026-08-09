@@ -1090,7 +1090,7 @@ export default function AdminPage() {
 
                   <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
                     <span className="text-xs font-mono text-slate-400">
-                      👥 {evt.registeredCount} / {evt.maxCapacity} seats reserved
+                      👥 {evt.registeredCount} / {evt.totalSeats} seats reserved
                     </span>
 
                     <div className="flex items-center gap-2">
