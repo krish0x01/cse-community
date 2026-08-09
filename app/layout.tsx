@@ -16,7 +16,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "CSE Community — Your campus. Unfiltered.",
+  title: "CSE Community — Our campus. Unfiltered.",
   description:
     "The modern digital commons for Computer Science & Engineering students. Read anonymous confessions, download verified lecture notes & PYQs, discover hackathons, and attend campus tech events.",
   keywords: [
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   authors: [{ name: "CSE Community" }],
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://csecommunity.org"),
   openGraph: {
-    title: "CSE Community — Your campus. Unfiltered.",
+    title: "CSE Community — Our campus. Unfiltered.",
     description: "The digital commons for CSE students. Anonymous confessions, verified study vaults, and hackathons.",
     url: "https://csecommunity.org",
     siteName: "CSE Community",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "CSE Community — Your campus. Unfiltered.",
+    title: "CSE Community — Our campus. Unfiltered.",
     description: "The digital commons for CSE students. Anonymous confessions, verified study vaults, and hackathons.",
   },
 };

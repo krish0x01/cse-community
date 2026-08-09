@@ -72,7 +72,7 @@ export default function Navbar() {
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 font-medium tracking-wide">
-                Your campus. Unfiltered.
+                Our campus. Unfiltered.
               </span>
             </div>
           </Link>

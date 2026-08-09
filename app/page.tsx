@@ -154,7 +154,7 @@ export default function HomePage() {
 
             {/* Main Cyber Headline */}
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.08]">
-              Your campus.{" "}
+              Our campus.{" "}
               <span className="relative inline-block bg-gradient-to-r from-cyan-400 via-cyan-200 to-purple-400 bg-clip-text text-transparent drop-shadow-sm">
                 Unfiltered<span className="text-cyan-400">.</span>
               </span>
