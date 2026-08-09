@@ -134,24 +134,34 @@ export default function AdminPage() {
           description?: string;
         }
 
-        const normalized: EventItem[] = (dataEvt.data as RawEvent[]).map((e) => ({
-          id: e.id,
-          title: e.title,
-          category: e.category as "Tech Talk" | "Workshop" | "Meetup",
-          date: e.date,
-          time: e.time,
-          venue: e.venue,
-          isOnline: e.is_online ?? e.isOnline ?? false,
-          speaker: e.speaker || {
-            name: e.speaker_name || "Campus Speaker",
-            role: e.speaker_role || "Tech Lead",
-            company: e.speaker_company || "CSE Community",
-          },
-          registeredCount: e.registered_count ?? e.registeredCount ?? 0,
-          maxCapacity: e.max_capacity ?? e.maxCapacity ?? 100,
-          tags: e.tags || [],
-          description: e.description || "",
-        }));
+        const normalized: EventItem[] = (dataEvt.data as RawEvent[]).map((e) => {
+          const d = new Date(e.date || Date.now());
+          const month = !isNaN(d.getTime())
+            ? d.toLocaleString("en-US", { month: "short" }).toUpperCase()
+            : "OCT";
+          const day = !isNaN(d.getTime()) ? String(d.getDate()).padStart(2, "0") : "24";
+
+          return {
+            id: e.id,
+            title: e.title,
+            category: (e.category as EventItem["category"]) || "Tech Talk",
+            date: e.date,
+            month,
+            day,
+            time: e.time,
+            venue: e.venue,
+            isOnline: e.is_online ?? e.isOnline ?? false,
+            speaker: e.speaker || {
+              name: e.speaker_name || "Campus Speaker",
+              role: e.speaker_role || "Tech Lead",
+              company: e.speaker_company || "CSE Community",
+            },
+            totalSeats: e.max_capacity ?? e.maxCapacity ?? 100,
+            registeredCount: e.registered_count ?? e.registeredCount ?? 0,
+            tags: e.tags || [],
+            description: e.description || "",
+          };
+        });
         setEvents(normalized);
       } else if (dataEvt.source === "mock") {
         setEvents(MOCK_EVENTS);
