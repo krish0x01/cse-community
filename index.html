@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSE Community | Campus Digital Commons & Anonymous Confessions</title>
+  <meta name="description" content="The honest, all-in-one ecosystem for Computer Science & Engineering students. Real confessions, verified exam vaults, hackathon squads, and vetted opportunities." />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            cyber: {
+              bg: '#080b14',
+              surface: '#0d1326',
+              card: '#111728',
+              border: '#1e293b',
+              cyan: '#22d3ee',
+              purple: '#c084fc',
+              pink: '#f43f5e',
+              emerald: '#10b981',
+            }
+          },
+          boxShadow: {
+            'cyan-glow': '0 0 25px -4px rgba(34, 211, 238, 0.35)',
+            'purple-glow': '0 0 25px -4px rgba(192, 132, 252, 0.35)',
+            'pink-glow': '0 0 25px -4px rgba(244, 63, 94, 0.35)',
+            'card-glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Supabase JS Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --background: #080b14;
+      --foreground: #f8fafc;
+    }
+    body {
+      background-color: #080b14;
+      color: #f8fafc;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow-x: hidden;
+      background-attachment: fixed;
+    }
+    ::selection {
+      background-color: rgba(34, 211, 238, 0.35);
+      color: #00f2fe;
+    }
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080b14;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 9999px;
+      border: 1px solid rgba(34, 211, 238, 0.2);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+      border-color: rgba(192, 132, 252, 0.5);
+    }
+    .bg-grid-pattern {
+      background-image: radial-gradient(rgba(34, 211, 238, 0.12) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    .glass-nav {
+      background: rgba(8, 11, 20, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.25s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+
+  <!-- ================= TOP NAVIGATION BAR ================= -->
+  <header class="sticky top-0 z-50 glass-nav border-b border-slate-800/80 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 sm:h-20">
+        
+        <!-- Logo & Branding -->
+        <a href="#home" onclick="switchTab('home')" class="flex items-center gap-3 group cursor-pointer">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 p-[1.5px] shadow-cyan-glow group-hover:scale-105 transition-transform">
+            <div class="w-full h-full bg-[#080b14] rounded-[10px] flex items-center justify-center">
+              <i data-lucide="terminal" class="w-5 h-5 text-cyan-400"></i>
+            </div>
+          </div>
+          <div class="flex flex-col">
+            <div class="flex items-center gap-1.5">
+              <span class="font-extrabold text-lg sm:text-xl tracking-tight text-white group-hover:text-cyan-300 transition-colors">
+                CSE<span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">Community</span>
+              </span>
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-950 text-cyan-400 border border-cyan-500/30">
+                v2.6 Moderated
+              </span>
+            </div>
+            <span class="text-[11px] font-mono text-slate-400 hidden sm:inline-block">
+              Campus Digital Commons
+            </span>
+          </div>
+        </a>
+
+        <!-- Desktop Navigation Tabs -->
+        <nav class="hidden md:flex items-center gap-1 bg-slate-900/90 border border-slate-800 p-1.5 rounded-full shadow-inner">
+          <button onclick="switchTab('home')" id="nav-home" class="nav-btn px-4 py-2 rounded-full text-xs font-semibold transition-all text-white bg-slate-800 shadow-sm">
+            <span class="flex items-center gap-1.5"><i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Home</span>
+          </button>
+          <button onclick="switchTab('confessions')" id="nav-confessions" class="nav-btn px-4 py-2 rounded-full text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800/60">
+            <span class="flex items-center gap-1.5"><i data-lucide="message-square-quote" class="w-3.5 h-3.5 text-pink-400"></i> Confessions</span>
+          </button>
+          <button onclick="switchTab('resources')" id="nav-resources" class="nav-btn px-4 py-2 rounded-full text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800/60">
+            <span class="flex items-center gap-1.5"><i data-lucide="file-code-2" class="w-3.5 h-3.5 text-cyan-400"></i> Vault</span>
+          </button>
+          <button onclick="switchTab('opportunities')" id="nav-opportunities" class="nav-btn px-4 py-2 rounded-full text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800/60">
+            <span class="flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-400"></i> Radar</span>
+          </button>
+          <button onclick="switchTab('events')" id="nav-events" class="nav-btn px-4 py-2 rounded-full text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800/60">
+            <span class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5 text-emerald-400"></i> Events</span>
+          </button>
+          <button onclick="switchTab('rules')" id="nav-rules" class="nav-btn px-4 py-2 rounded-full text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800/60">
+            <span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-slate-400"></i> Rules</span>
+          </button>
+        </nav>
+
+        <!-- Right Quick Actions -->
+        <div class="flex items-center gap-2.5">
+          <!-- Submit Post Button -->
+          <button onclick="switchTab('submit')" class="px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-gradient-to-r from-cyan-400 via-cyan-300 to-purple-400 hover:from-cyan-300 hover:to-purple-300 text-slate-950 font-bold text-xs sm:text-sm shadow-cyan-glow hover:shadow-lg transition-all flex items-center gap-1.5 active:scale-95">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Submit Post</span>
+            <span class="sm:hidden">Post</span>
+          </button>
+
+          <!-- Admin Lock Button -->
+          <button onclick="switchTab('admin')" title="Moderator Access" class="p-2.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-purple-500/40 text-slate-400 hover:text-purple-300 transition-colors relative">
+            <i data-lucide="shield" class="w-4 h-4"></i>
+            <span id="admin-pending-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-pink-500 text-[9px] font-bold text-white rounded-full flex items-center justify-center animate-pulse">0</span>
+          </button>
+
+          <!-- Mobile Hamburger Toggle -->
+          <button onclick="toggleMobileMenu()" class="p-2 rounded-xl bg-slate-900 md:hidden border border-slate-800 text-slate-400 hover:text-white">
+            <i data-lucide="menu" id="mobile-menu-icon" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Mobile Dropdown Navigation -->
+      <div id="mobile-menu" class="hidden md:hidden py-4 border-t border-slate-800 space-y-1">
+        <button onclick="switchTab('home'); toggleMobileMenu()" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+          <i data-lucide="layout-grid" class="w-4 h-4 text-cyan-400"></i> Home
+        </button>
+        <button onclick="switchTab('confessions'); toggleMobileMenu()" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+          <i data-lucide="message-square-quote" class="w-4 h-4 text-pink-400"></i> Anonymous Confessions
+        </button>
+        <button onclick="switchTab('resources'); toggleMobileMenu()" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+          <i data-lucide="file-code-2" class="w-4 h-4 text-cyan-400"></i> Resource Vault (PYQs & Notes)
+        </button>
+        <button onclick="switchTab('opportunities'); toggleMobileMenu()" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+          <i data-lucide="sparkles" class="w-4 h-4 text-purple-400"></i> Opportunity Radar
+        </button>
+        <button onclick="switchTab('events'); toggleMobileMenu()" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+          <i data-lucide="calendar" class="w-4 h-4 text-emerald-400"></i> Tech Events & Workshops
+        </button>
+        <button onclick="switchTab('rules'); toggleMobileMenu()" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-2">
+          <i data-lucide="shield-check" class="w-4 h-4 text-slate-400"></i> Code of Conduct
+        </button>
+        <button onclick="switchTab('admin'); toggleMobileMenu()" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-purple-400 hover:bg-slate-800 flex items-center gap-2">
+          <i data-lucide="lock" class="w-4 h-4 text-purple-400"></i> Moderator Admin Panel
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="flex-1">
+
+    <!-- ==================== TAB 1: HOME PAGE ==================== -->
+    <section id="tab-home" class="tab-content active space-y-20 sm:space-y-28 pb-16">
+      <!-- Hero Section -->
+      <div class="relative pt-12 pb-16 md:pt-20 md:pb-28 overflow-hidden border-b border-slate-800/80 bg-gradient-to-b from-[#080b14] via-[#0d1326] to-[#080b14]">
+        <div class="absolute inset-0 bg-grid-pattern opacity-40 pointer-events-none"></div>
+        <div class="absolute top-10 left-1/3 w-[500px] h-[500px] bg-cyan-500/15 rounded-full blur-[120px] pointer-events-none"></div>
+        <div class="absolute top-20 right-1/4 w-[450px] h-[450px] bg-purple-500/15 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div class="max-w-3xl mx-auto text-center space-y-6">
+            
+            <!-- Live Pill -->
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-cyan-500/30 shadow-cyan-glow text-xs font-mono text-slate-300">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+              <span>Campus Digital Commons • Live 2026</span>
+              <span class="text-slate-700">|</span>
+              <span class="text-cyan-300 font-semibold">Moderated & Safe</span>
+            </div>
+
+            <!-- Headline -->
+            <h1 class="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.08]">
+              Your campus. <br />
+              <span class="relative inline-block bg-gradient-to-r from-cyan-400 via-cyan-200 to-purple-400 bg-clip-text text-transparent drop-shadow-sm">
+                Unfiltered<span class="text-cyan-400">.</span>
+              </span>
+            </h1>
+
+            <!-- Subtitle -->
+            <p class="text-base sm:text-xl text-slate-300 font-normal leading-relaxed max-w-2xl mx-auto">
+              The honest, all-in-one ecosystem for Computer Science & Engineering students. Real confessions, verified exam vaults, hackathon squads, and vetted opportunities.
+            </p>
+
+            <!-- Buttons -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4">
+              <button onclick="switchTab('confessions')" class="w-full sm:w-auto px-7 py-3.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm border border-slate-700 shadow-lg hover:border-cyan-500/40 hover:shadow-cyan-glow transition-all flex items-center justify-center gap-2 group active:scale-95">
+                <span>Explore Approved Confessions</span>
+                <i data-lucide="arrow-right" class="w-4 h-4 text-cyan-400 group-hover:translate-x-1 transition-transform"></i>
+              </button>
+              <button onclick="switchTab('resources')" class="w-full sm:w-auto px-7 py-3.5 rounded-full bg-gradient-to-r from-cyan-400 via-cyan-300 to-purple-400 hover:from-cyan-300 hover:to-purple-300 text-slate-950 font-bold text-sm shadow-cyan-glow transition-all flex items-center justify-center gap-2 active:scale-95">
+                <i data-lucide="file-code-2" class="w-4 h-4"></i>
+                <span>Access Resource Vault</span>
+              </button>
+            </div>
+
+            <!-- Badges -->
+            <div class="pt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-400 font-mono">
+              <span class="flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-cyan-400"></i> Zero signup required</span>
+              <span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-purple-400"></i> Moderator Approved</span>
+              <span class="flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-cyan-400"></i> Strict Anti-Doxxing</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div class="bg-slate-900/80 rounded-2xl p-5 sm:p-6 border border-slate-800 hover:border-cyan-500/40 shadow-card-glass hover:shadow-cyan-glow transition-all backdrop-blur-md">
+            <div class="flex items-center justify-between mb-3">
+              <span class="font-mono text-xs text-slate-400 font-semibold uppercase tracking-wider">Active Engineers</span>
+              <div class="w-2 h-2 rounded-full bg-cyan-400 shadow-cyan-glow"></div>
+            </div>
+            <div class="font-extrabold text-2xl sm:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-cyan-300 font-mono tracking-tight mb-1">
+              4,850+
+            </div>
+            <p class="text-xs text-slate-400 font-medium">Across 4 batches & alumni</p>
+          </div>
+
+          <div class="bg-slate-900/80 rounded-2xl p-5 sm:p-6 border border-slate-800 hover:border-pink-500/40 shadow-card-glass hover:shadow-pink-glow transition-all backdrop-blur-md">
+            <div class="flex items-center justify-between mb-3">
+              <span class="font-mono text-xs text-slate-400 font-semibold uppercase tracking-wider">Approved Confessions</span>
+              <div class="w-2 h-2 rounded-full bg-pink-400 shadow-pink-glow"></div>
+            </div>
+            <div id="stat-confession-count" class="font-extrabold text-2xl sm:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-pink-300 font-mono tracking-tight mb-1">
+              3
+            </div>
+            <p class="text-xs text-slate-400 font-medium">100% council verified</p>
+          </div>
+
+          <div class="bg-slate-900/80 rounded-2xl p-5 sm:p-6 border border-slate-800 hover:border-cyan-500/40 shadow-card-glass hover:shadow-cyan-glow transition-all backdrop-blur-md">
+            <div class="flex items-center justify-between mb-3">
+              <span class="font-mono text-xs text-slate-400 font-semibold uppercase tracking-wider">Curated Vault</span>
+              <div class="w-2 h-2 rounded-full bg-cyan-400 shadow-cyan-glow"></div>
+            </div>
+            <div class="font-extrabold text-2xl sm:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-cyan-300 font-mono tracking-tight mb-1">
+              890+
+            </div>
+            <p class="text-xs text-slate-400 font-medium">PYQs, practicals & notes</p>
+          </div>
+
+          <div class="bg-slate-900/80 rounded-2xl p-5 sm:p-6 border border-slate-800 hover:border-purple-500/40 shadow-card-glass hover:shadow-purple-glow transition-all backdrop-blur-md">
+            <div class="flex items-center justify-between mb-3">
+              <span class="font-mono text-xs text-slate-400 font-semibold uppercase tracking-wider">Opportunities</span>
+              <div class="w-2 h-2 rounded-full bg-purple-400 shadow-purple-glow"></div>
+            </div>
+            <div class="font-extrabold text-2xl sm:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-purple-300 font-mono tracking-tight mb-1">
+              320+
+            </div>
+            <p class="text-xs text-slate-400 font-medium">Internships & hackathons</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trending Confessions Showcase -->
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+          <div>
+            <div class="flex items-center gap-2 text-purple-400 font-mono text-xs font-semibold uppercase tracking-wider mb-2">
+              <i data-lucide="flame" class="w-4 h-4 fill-purple-400"></i>
+              <span>Campus Spotlight</span>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Approved Confessions</h2>
+            <p class="text-sm text-slate-400 mt-1">Verified confessions reviewed and approved by moderators.</p>
+          </div>
+          <button onclick="switchTab('confessions')" class="inline-flex items-center gap-1.5 text-sm font-semibold text-cyan-400 hover:text-cyan-300 transition-colors group self-start sm:self-auto">
+            <span>View All</span>
+            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+          </button>
+        </div>
+        <div id="home-trending-confessions" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: CONFESSIONS ==================== -->
+    <section id="tab-confessions" class="tab-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
+      <!-- Header Banner -->
+      <div class="bg-slate-900/80 rounded-3xl p-6 sm:p-10 border border-purple-500/30 shadow-card-glass relative overflow-hidden backdrop-blur-md">
+        <div class="max-w-3xl relative z-10 space-y-4">
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-950/80 border border-purple-500/40 text-purple-300 text-xs font-mono font-semibold shadow-purple-glow">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-purple-400"></i>
+              <span>Moderated Public Feed</span>
+            </div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono border bg-cyan-950/80 text-cyan-300 border-cyan-500/40 shadow-cyan-glow">
+              <i data-lucide="lock" class="w-3 h-3 text-cyan-400"></i>
+              <span>New Submissions Require Admin Approval</span>
+            </div>
+          </div>
+
+          <h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight">
+            Approved Campus Confessions
+          </h1>
+
+          <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+            All submitted confessions are sent confidentially to the Admin Council. Only approved confessions are visible on this public feed.
+          </p>
+
+          <div class="pt-2 flex flex-wrap items-center gap-3">
+            <button onclick="switchTab('submit')" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-purple-400 hover:from-cyan-300 hover:to-purple-300 text-slate-950 font-bold text-xs sm:text-sm shadow-cyan-glow transition-all active:scale-95">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              <span>Submit Anonymous Confession</span>
+            </button>
+            <button onclick="loadConfessionsFromBackend()" class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs sm:text-sm border border-slate-700 transition-colors">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Refresh Feed</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters & Search Toolbar -->
+      <div class="space-y-4">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div class="relative flex-1 max-w-md">
+            <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="confession-search" oninput="renderConfessions()" placeholder="Search approved confessions..." class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400" />
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-400 font-mono hidden sm:inline">Sort:</span>
+            <div class="inline-flex p-1 bg-slate-900 border border-slate-800 rounded-2xl">
+              <button onclick="setConfessionSort('trending')" id="sort-trending" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all bg-slate-800 text-cyan-400 shadow-sm">Trending</button>
+              <button onclick="setConfessionSort('liked')" id="sort-liked" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white">Most Liked</button>
+              <button onclick="setConfessionSort('recent')" id="sort-recent" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all text-slate-400 hover:text-white">Recent</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Pills -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none" id="confession-category-filters">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Confessions Feed Grid -->
+      <div id="confessions-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: RESOURCES (VAULT) ==================== -->
+    <section id="tab-resources" class="tab-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
+      <div class="bg-slate-900/80 rounded-3xl p-6 sm:p-10 border border-cyan-500/30 shadow-card-glass relative overflow-hidden backdrop-blur-md">
+        <div class="max-w-3xl relative z-10 space-y-4">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-semibold shadow-cyan-glow">
+            <i data-lucide="file-code-2" class="w-3.5 h-3.5"></i>
+            <span>Academic Vault • Verified Exam Materials</span>
+          </div>
+
+          <h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight">
+            Curated Study Vault
+          </h1>
+
+          <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+            Handwritten topper notes, 5-year solved PYQs, lab manuals, and placement roadmaps.
+          </p>
+
+          <div class="pt-2 flex flex-wrap items-center gap-3">
+            <button onclick="switchTab('submit'); setSubmitType('resource')" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-purple-400 hover:from-cyan-300 hover:to-purple-300 text-slate-950 font-bold text-xs sm:text-sm shadow-cyan-glow transition-all active:scale-95">
+              <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+              <span>Upload Study Resource</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resource Filters -->
+      <div class="space-y-4">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div class="relative flex-1 max-w-md">
+            <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="resource-search" oninput="renderResources()" placeholder="Search subject code (e.g. CS-301), topics, or PYQs..." class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400" />
+          </div>
+
+          <div class="flex items-center gap-2 overflow-x-auto pb-1" id="resource-category-pills"></div>
+        </div>
+
+        <div class="flex items-center gap-2 overflow-x-auto pb-2" id="resource-semester-pills"></div>
+      </div>
+
+      <div id="resources-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </section>
+
+    <!-- ==================== TAB 4: OPPORTUNITIES ==================== -->
+    <section id="tab-opportunities" class="tab-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
+      <div class="bg-slate-900/80 rounded-3xl p-6 sm:p-10 border border-purple-500/30 shadow-card-glass relative overflow-hidden backdrop-blur-md">
+        <div class="max-w-3xl relative z-10 space-y-4">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-950/80 border border-purple-500/40 text-purple-300 text-xs font-mono font-semibold shadow-purple-glow">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            <span>Opportunity Radar</span>
+          </div>
+
+          <h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight">
+            Opportunity Radar
+          </h1>
+
+          <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+            Curated national hackathons, high-stipend remote internships, global fellowships, and research grants.
+          </p>
+
+          <div class="pt-2 flex flex-wrap items-center gap-3">
+            <button onclick="switchTab('submit'); setSubmitType('opportunity')" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-purple-400 to-cyan-400 hover:from-purple-300 hover:to-cyan-300 text-slate-950 font-bold text-xs sm:text-sm shadow-purple-glow transition-all active:scale-95">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              <span>Post Opportunity</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="opportunities-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+    </section>
+
+    <!-- ==================== TAB 5: EVENTS ==================== -->
+    <section id="tab-events" class="tab-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
+      <div class="bg-slate-900/80 rounded-3xl p-6 sm:p-10 border border-emerald-500/30 shadow-card-glass relative overflow-hidden backdrop-blur-md">
+        <div class="max-w-3xl relative z-10 space-y-4">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-semibold">
+            <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+            <span>Campus Tech Calendar</span>
+          </div>
+
+          <h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight">
+            Tech Events & Sprints
+          </h1>
+
+          <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+            Live webinars, open source pull-request sprints, and campus hack meetups.
+          </p>
+        </div>
+      </div>
+
+      <div id="events-list" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+    </section>
+
+    <!-- ==================== TAB 6: RULES ==================== -->
+    <section id="tab-rules" class="tab-content max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
+      <div class="text-center space-y-3">
+        <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-slate-900 border border-slate-700 text-cyan-400 text-xs font-mono font-semibold">
+          <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+          <span>Campus Ethics & Moderation</span>
+        </span>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          Community Guidelines & Approval Policy
+        </h1>
+        <p class="text-sm text-slate-400 max-w-xl mx-auto">
+          All submissions are reviewed by the moderator team to prevent doxxing, harassment, or fake exams.
+        </p>
+      </div>
+
+      <div id="rules-list" class="space-y-6"></div>
+    </section>
+
+    <!-- ==================== TAB 7: SUBMIT ==================== -->
+    <section id="tab-submit" class="tab-content max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
+      <div class="text-center space-y-3">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-semibold shadow-cyan-glow">
+          <i data-lucide="send" class="w-3.5 h-3.5"></i>
+          <span>Campus Contribution Portal</span>
+        </span>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          Submit to CSE Community
+        </h1>
+        
+        <!-- Moderation Notice Banner -->
+        <div class="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/30 text-purple-300 text-xs max-w-lg mx-auto flex items-center justify-center gap-2">
+          <i data-lucide="shield" class="w-4 h-4 text-purple-400 shrink-0"></i>
+          <span><b>Moderator Queue Active:</b> Your confession will be sent confidentially to the Admin Panel for review before going public.</span>
+        </div>
+      </div>
+
+      <!-- Submission Type Switcher Tabs -->
+      <div class="bg-slate-900/85 rounded-3xl border border-slate-800 shadow-card-glass overflow-hidden backdrop-blur-md">
+        <div class="grid grid-cols-2 sm:grid-cols-4 border-b border-slate-800 bg-slate-950/60 p-2 gap-1.5">
+          <button type="button" onclick="setSubmitType('confession')" id="submit-tab-confession" class="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl text-xs sm:text-sm font-semibold transition-all bg-slate-800 text-pink-300 border border-pink-500/40">
+            <i data-lucide="message-square-quote" class="w-4 h-4 text-pink-400"></i>
+            <span>Confession</span>
+          </button>
+          <button type="button" onclick="setSubmitType('resource')" id="submit-tab-resource" class="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800/50">
+            <i data-lucide="file-code-2" class="w-4 h-4 text-cyan-400"></i>
+            <span>Study Resource</span>
+          </button>
+          <button type="button" onclick="setSubmitType('opportunity')" id="submit-tab-opportunity" class="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800/50">
+            <i data-lucide="sparkles" class="w-4 h-4 text-purple-400"></i>
+            <span>Opportunity</span>
+          </button>
+          <button type="button" onclick="setSubmitType('event')" id="submit-tab-event" class="flex items-center justify-center gap-2 py-3 px-3 rounded-2xl text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800/50">
+            <i data-lucide="calendar" class="w-4 h-4 text-emerald-400"></i>
+            <span>Event / Meetup</span>
+          </button>
+        </div>
+
+        <div class="p-6 sm:p-8">
+          <!-- FORM 1: CONFESSION -->
+          <form id="form-confession" onsubmit="handleConfessionSubmit(event)" class="space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono">Anonymous Alias</label>
+                  <button type="button" onclick="shuffleAlias()" class="text-xs text-pink-400 hover:text-pink-300 flex items-center gap-1 font-mono">
+                    <i data-lucide="refresh-cw" class="w-3 h-3"></i> Shuffle
+                  </button>
+                </div>
+                <input type="text" id="conf-alias" value="BitwiseWanderer" required class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800/90 text-white font-mono text-sm focus:outline-none focus:border-pink-400 focus:ring-1 focus:ring-pink-400" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Batch / Year</label>
+                <select id="conf-batch" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-pink-400">
+                  <option>CSE '25 (Final Year)</option>
+                  <option selected>CSE '26 (3rd Year)</option>
+                  <option>CSE '27 (2nd Year)</option>
+                  <option>CSE '28 (Freshers)</option>
+                  <option>CSE Alumni</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Category</label>
+              <select id="conf-category" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-pink-400">
+                <option value="Academics">Academics & Exams</option>
+                <option value="Rants">Curriculum & Campus Rants</option>
+                <option value="Campus Life">Campus Life & Labs</option>
+                <option value="Romance">Campus Romance & Crushes</option>
+                <option value="Placements">Placements & Internships</option>
+                <option value="Hostel">Hostel & Late Night Tales</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Confession Story / Secret</label>
+              <textarea id="conf-content" rows="4" required placeholder="Write your raw, honest experience... (Sent directly to Admin Review Queue)" class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800/90 text-white text-sm focus:outline-none focus:border-pink-400"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Tags (#separated by spaces)</label>
+              <input type="text" id="conf-tags" value="#CampusLife #CSECommunity" placeholder="#OperatingSystems #MidSemTrauma" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white font-mono text-sm focus:outline-none focus:border-pink-400" />
+            </div>
+
+            <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 hover:from-pink-400 hover:to-cyan-300 text-slate-950 font-bold text-sm shadow-pink-glow transition-all flex items-center justify-center gap-2 active:scale-98">
+              <i data-lucide="send" class="w-4 h-4"></i>
+              <span>Submit Confession (Sent to Admin Queue)</span>
+            </button>
+          </form>
+
+          <!-- FORM 2: RESOURCE -->
+          <form id="form-resource" onsubmit="handleResourceSubmit(event)" class="space-y-6 hidden">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Subject Code</label>
+                <input type="text" id="res-code" required placeholder="e.g. CS-301" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white font-mono text-sm focus:outline-none focus:border-cyan-400" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Subject Name</label>
+                <input type="text" id="res-subject" required placeholder="e.g. Operating Systems" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-cyan-400" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Document Title</label>
+              <input type="text" id="res-title" required placeholder="e.g. Complete CPU Scheduling Hand-Annotated Notes" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-cyan-400" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Semester</label>
+                <select id="res-semester" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-cyan-400">
+                  <option>Semester 1-2</option>
+                  <option>Semester 3</option>
+                  <option>Semester 4</option>
+                  <option selected>Semester 5</option>
+                  <option>Semester 6</option>
+                  <option>Semester 7-8</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Category</label>
+                <select id="res-category" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-cyan-400">
+                  <option value="Notes">Handwritten Notes</option>
+                  <option value="PYQ">Solved PYQ Collection</option>
+                  <option value="Practical">Lab Practicals & Code</option>
+                  <option value="Roadmap">Placement Roadmap</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Direct PDF / Drive URL</label>
+              <input type="url" id="res-link" required placeholder="https://drive.google.com/..." class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-cyan-400" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Description</label>
+              <textarea id="res-desc" rows="3" placeholder="Briefly list topics covered..." class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-cyan-400"></textarea>
+            </div>
+
+            <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-400 to-purple-400 hover:from-cyan-300 hover:to-purple-300 text-slate-950 font-bold text-sm shadow-cyan-glow transition-all flex items-center justify-center gap-2 active:scale-98">
+              <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+              <span>Upload to Academic Vault</span>
+            </button>
+          </form>
+
+          <!-- FORM 3: OPPORTUNITY -->
+          <form id="form-opportunity" onsubmit="handleOpportunitySubmit(event)" class="space-y-6 hidden">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Opportunity Title</label>
+                <input type="text" id="opp-title" required placeholder="e.g. HackCampus 2026 AI Hackathon" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-purple-400" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Company / Sponsor</label>
+                <input type="text" id="opp-company" required placeholder="e.g. Razorpay Labs" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-purple-400" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Type</label>
+                <select id="opp-type" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-purple-400">
+                  <option value="Hackathon">Hackathon</option>
+                  <option value="Internship">Internship</option>
+                  <option value="Scholarship">Fellowship</option>
+                  <option value="Workshop">Workshop</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Location</label>
+                <select id="opp-location" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-purple-400">
+                  <option value="Remote">Remote</option>
+                  <option value="Hybrid">Hybrid</option>
+                  <option value="On-site">On-site Campus</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Stipend / Prize</label>
+                <input type="text" id="opp-stipend" placeholder="e.g. ₹65,000/mo" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-purple-400" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Application Link</label>
+              <input type="url" id="opp-url" required placeholder="https://..." class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-purple-400" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Description</label>
+              <textarea id="opp-desc" rows="3" placeholder="Briefly describe the role..." class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-purple-400"></textarea>
+            </div>
+
+            <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-400 hover:from-purple-400 hover:to-cyan-300 text-slate-950 font-bold text-sm shadow-purple-glow transition-all flex items-center justify-center gap-2 active:scale-98">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              <span>Post to Radar</span>
+            </button>
+          </form>
+
+          <!-- FORM 4: EVENT -->
+          <form id="form-event" onsubmit="handleEventSubmit(event)" class="space-y-6 hidden">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Event Title</label>
+              <input type="text" id="evt-title" required placeholder="e.g. System Design Webinar" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-emerald-400" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Date</label>
+                <input type="text" id="evt-date" required placeholder="Aug 28, 2026" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-emerald-400" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Time</label>
+                <input type="text" id="evt-time" placeholder="5:30 PM IST" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-emerald-400" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">Venue / Link</label>
+                <input type="text" id="evt-venue" placeholder="Auditorium Hall 2" class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white text-sm focus:outline-none focus:border-emerald-400" />
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-bold text-sm shadow-cyan-glow transition-all flex items-center justify-center gap-2 active:scale-98">
+              <i data-lucide="calendar" class="w-4 h-4"></i>
+              <span>Publish Event</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 8: ADMIN (MODERATOR COMMAND CENTER) ==================== -->
+    <section id="tab-admin" class="tab-content max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
+      
+      <!-- Login Gate -->
+      <div id="admin-gate" class="min-h-[50vh] flex items-center justify-center">
+        <div class="max-w-md w-full bg-slate-900/90 rounded-3xl border border-slate-800 shadow-2xl p-8 space-y-6 relative z-10 backdrop-blur-md">
+          <div class="text-center space-y-2">
+            <div class="w-14 h-14 rounded-2xl bg-purple-950/80 border border-purple-500/40 text-purple-400 flex items-center justify-center mx-auto shadow-purple-glow">
+              <i data-lucide="lock" class="w-7 h-7"></i>
+            </div>
+            <h1 class="text-2xl font-black text-white tracking-tight">
+              Moderator Command Center
+            </h1>
+            <p class="text-xs text-slate-400 font-mono">
+              Only You (Admin) can review submissions here
+            </p>
+          </div>
+
+          <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">
+                Admin Passcode
+              </label>
+              <input type="password" id="admin-passcode-input" placeholder="Enter access code..." class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white font-mono text-sm focus:outline-none focus:border-purple-400" />
+              <p id="admin-auth-error" class="text-xs text-rose-400 mt-2 font-mono hidden"></p>
+            </div>
+
+            <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-400 hover:from-purple-400 hover:to-cyan-300 text-slate-950 font-bold text-sm shadow-purple-glow transition-all active:scale-98 flex items-center justify-center gap-2">
+              <i data-lucide="unlock" class="w-4 h-4"></i>
+              <span>Unlock Admin Panel</span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Authenticated Dashboard -->
+      <div id="admin-dashboard" class="space-y-8 hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/80 p-6 rounded-3xl border border-slate-800 backdrop-blur-md">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-purple-950/80 border border-purple-500/40 text-purple-400 flex items-center justify-center shadow-purple-glow">
+              <i data-lucide="shield-check" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-white">Admin Moderation Console</h2>
+              <span class="text-xs text-emerald-400 font-mono">● Passcode Verified: Authorized Session</span>
+            </div>
+          </div>
+          <button onclick="adminLogout()" class="px-4 py-2 rounded-xl bg-rose-950 text-rose-300 border border-rose-800 text-xs font-semibold hover:bg-rose-900 transition-colors">
+            Logout Admin
+          </button>
+        </div>
+
+        <!-- Admin Sub-tabs -->
+        <div class="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto">
+          <button onclick="setAdminSubTab('pending')" id="admin-tab-pending" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-pink-400 border border-pink-500/30 flex items-center gap-1.5 whitespace-nowrap">
+            <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+            <span>Pending Review Queue</span>
+            <span id="admin-pending-tab-badge" class="px-1.5 py-0.2 rounded-full bg-pink-500 text-[10px] text-white font-bold font-mono">0</span>
+          </button>
+          <button onclick="setAdminSubTab('approved')" id="admin-tab-approved" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+            <span>Live Approved Confessions</span>
+          </button>
+          <button onclick="setAdminSubTab('resources')" id="admin-tab-resources" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white whitespace-nowrap">
+            Academic Vault
+          </button>
+          <button onclick="setAdminSubTab('reports')" id="admin-tab-reports" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white whitespace-nowrap">
+            Reports
+          </button>
+        </div>
+
+        <!-- PANEL 1: PENDING CONFESSIONS (ONLY VISIBLE TO ADMIN) -->
+        <div id="admin-panel-pending" class="space-y-4">
+          <div class="p-4 rounded-2xl bg-pink-950/20 border border-pink-500/30 flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-pink-300 flex items-center gap-1.5">
+                <i data-lucide="lock" class="w-4 h-4"></i>
+                <span>Private Submissions (Only visible to you)</span>
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">These confessions were submitted by users and are NOT visible on the public feed until you click "Approve".</p>
+            </div>
+            <button onclick="loadConfessionsFromBackend()" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-mono hover:bg-slate-700">
+              Refresh Queue
+            </button>
+          </div>
+
+          <div id="admin-pending-table" class="space-y-3">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- PANEL 2: LIVE APPROVED CONFESSIONS -->
+        <div id="admin-panel-approved" class="space-y-4 hidden">
+          <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider font-mono">Live Public Confessions</h3>
+          <div id="admin-approved-table" class="space-y-3">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- PANEL 3: RESOURCES -->
+        <div id="admin-panel-resources" class="space-y-4 hidden">
+          <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider font-mono">Academic Vault Resources Management</h3>
+          <div id="admin-resources-table" class="space-y-3">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- PANEL 4: REPORTS -->
+        <div id="admin-panel-reports" class="space-y-4 hidden">
+          <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider font-mono">Student Reported Posts</h3>
+          <div id="admin-reports-table" class="space-y-3">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="border-t border-slate-800/80 bg-[#080b14]/90 py-12 px-4 sm:px-6 lg:px-8 mt-auto">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-purple-600 p-[1px]">
+          <div class="w-full h-full bg-[#080b14] rounded-[7px] flex items-center justify-center">
+            <i data-lucide="terminal" class="w-4 h-4 text-cyan-400"></i>
+          </div>
+        </div>
+        <span class="font-bold text-sm text-white">
+          CSE<span class="text-cyan-400">Community</span> &bull; 2026
+        </span>
+      </div>
+      <p class="text-xs text-slate-500 font-mono text-center">
+        Built with ❤️ for CSE Students &bull; Admin Moderated & Protected
+      </p>
+      <div class="flex items-center gap-4 text-xs font-mono text-slate-400">
+        <button onclick="switchTab('rules')" class="hover:text-cyan-400 transition-colors">Ethics Rules</button>
+        <span>&bull;</span>
+        <button onclick="switchTab('admin')" class="hover:text-purple-400 transition-colors">Admin Lock</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= TOAST NOTIFICATION CONTAINER ================= -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ================= JAVASCRIPT APPLICATION CORE & SUPABASE BACKEND ================= -->
+  <script>
+    // --- 1. SUPABASE BACKEND CONFIGURATION ---
+    const SUPABASE_URL = "https://bvenldiowgkneyrtjnjv.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2ZW5sZGlvd2drbmV5cnRqbmp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTcxNTcsImV4cCI6MjEwMTc5MzE1N30.KJoeYoTjY9N9SaMERFwku0Qn1SWFrOMwJNsF0aUzVUQ";
+    const ADMIN_PASSCODE = "Krish@Admin1029";
+
+    let supabase = null;
+
+    try {
+      if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+    } catch (e) {
+      console.warn("Supabase init:", e);
+    }
+
+    // --- 2. LOCAL DATA STATE (With status: PENDING / APPROVED) ---
+    let CONFESSIONS = [
+      {
+        id: "conf-1",
+        alias: "BitwiseWanderer",
+        batch: "CSE '25",
+        timestamp: "20 mins ago",
+        category: "Academics",
+        content: "Spent 6 hours debugging a segmentation fault only to realize I allocated sizeof(int) instead of sizeof(int*) for my pointer array in the OS assignment. The professor said 'C builds character'. It only built chronic sleep deprivation.",
+        likes: 142,
+        isTrending: true,
+        status: "APPROVED",
+        isApproved: true,
+        tags: ["#OperatingSystems", "#CProgramming", "#Deadlines"],
+        comments: [
+          { author: "ValgrindFanatic", text: "Always run with -fsanitize=address bro, saves your sanity.", timestamp: "15 mins ago" }
+        ]
+      },
+      {
+        id: "conf-2",
+        alias: "NightOwlCoder",
+        batch: "CSE '26",
+        timestamp: "1 hour ago",
+        category: "Placements",
+        content: "Just cracked my dream Google Summer of Code proposal! 🚀 To everyone feeling imposter syndrome: consistency in real GitHub repos always triumphs over memorized algorithm tricks.",
+        likes: 389,
+        isTrending: true,
+        status: "APPROVED",
+        isApproved: true,
+        tags: ["#GSoC", "#OpenSource", "#Motivation"],
+        comments: []
+      },
+      {
+        id: "conf-3",
+        alias: "NullPointerCupid",
+        batch: "CSE '27",
+        timestamp: "3 hours ago",
+        category: "Romance",
+        content: "To the girl in 3rd row Lab 4 who always shares her hotspot when the campus Wi-Fi drops packet rates: you are singlehandedly maintaining my semester GPA. Thank you!",
+        likes: 274,
+        isTrending: true,
+        status: "APPROVED",
+        isApproved: true,
+        tags: ["#CampusRomance", "#Lab4", "#Wholesome"],
+        comments: []
+      }
+    ];
+
+    let RESOURCES = [
+      {
+        id: "res-1",
+        title: "Operating Systems Hand-Annotated Notes & CPU Scheduling Cheatsheet",
+        subjectCode: "CS-301",
+        subjectName: "Operating Systems",
+        semester: "Semester 5",
+        category: "Notes",
+        author: "Prof. Approved • Topper Handwritten",
+        verified: true,
+        format: "PDF",
+        fileSize: "14.2 MB",
+        downloads: 1840,
+        rating: 4.9,
+        linkUrl: "https://example.com/os-notes.pdf",
+        description: "Comprehensive notes covering Process Synchronization, Deadlocks, Memory Management, and Linux Kernel Internals."
+      }
+    ];
+
+    let OPPORTUNITIES = [
+      {
+        id: "opp-1",
+        title: "HackCampus 2026 - Pan-India AI & Systems Hackathon",
+        company: "Devfolio × CSE Community",
+        type: "Hackathon",
+        location: "Hybrid",
+        stipendOrPrize: "₹3,50,000 Prize Pool",
+        deadline: "March 15, 2026",
+        daysRemaining: 5,
+        tags: ["AI/ML", "Web3", "Distributed Systems"],
+        description: "36-hour flagship hackathon bringing 500+ builders to create real-world solutions.",
+        applyUrl: "https://devfolio.co"
+      }
+    ];
+
+    let EVENTS = [
+      {
+        id: "evt-1",
+        title: "Demystifying System Design: From Monolith to Microservices",
+        category: "Tech Talk",
+        date: "Aug 18, 2026",
+        month: "AUG",
+        day: "18",
+        time: "5:30 PM IST",
+        venue: "Auditorium Hall 2",
+        speaker: "Rohan Varma (Staff Engineer @ Stripe)",
+        totalSeats: 250,
+        registeredCount: 198,
+        description: "Learn how modern high-scale apps handle millions of concurrent connections."
+      }
+    ];
+
+    let RULES = [
+      {
+        num: "01",
+        title: "Moderated Submissions & Zero Tolerance for Harassment",
+        summary: "All confessions are held in the moderator review queue to protect students from personal attacks, hate speech, and doxxing.",
+        dos: ["Critique code, exams, or systemic campus issues constructively.", "Protect peer identities."],
+        donts: ["No personal targeting, full names, or harassment."]
+      }
+    ];
+
+    let REPORTS = [];
+    let userLikedConfessions = new Set(JSON.parse(localStorage.getItem("cse_liked_confessions") || "[]"));
+
+    // --- 3. FETCH CONFESSIONS FROM SUPABASE ---
+    async function loadConfessionsFromBackend() {
+      if (!supabase) return;
+      try {
+        const { data, error } = await supabase.from('confessions').select('*').order('created_at', { ascending: false });
+        if (!error && data && data.length > 0) {
+          CONFESSIONS = data.map(item => ({
+            id: item.id,
+            alias: item.alias,
+            batch: item.batch,
+            category: item.category,
+            content: item.content,
+            likes: item.likes || 0,
+            isTrending: item.is_trending || false,
+            status: item.status || (item.is_approved ? 'APPROVED' : 'PENDING'),
+            isApproved: item.is_approved === true || item.status === 'APPROVED',
+            tags: item.tags || [],
+            timestamp: new Date(item.created_at).toLocaleDateString(),
+            comments: []
+          }));
+          renderConfessions();
+          renderHomeTrending();
+          updateAdminBadgeCount();
+          if (isAdminAuth) renderAdminTables();
+        }
+      } catch (err) {
+        console.log("Supabase fetch:", err);
+      }
+    }
+
+    function setupRealtimeListener() {
+      if (!supabase) return;
+      try {
+        supabase
+          .channel('confessions_moderation_channel')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'confessions' }, () => {
+            loadConfessionsFromBackend();
+          })
+          .subscribe();
+      } catch (err) {}
+    }
+
+    function updateAdminBadgeCount() {
+      const pendingList = CONFESSIONS.filter(c => !c.isApproved && c.status !== 'APPROVED');
+      const badge = document.getElementById('admin-pending-badge');
+      const tabBadge = document.getElementById('admin-pending-tab-badge');
+
+      if (badge) {
+        if (pendingList.length > 0) {
+          badge.innerText = pendingList.length;
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+
+      if (tabBadge) {
+        tabBadge.innerText = pendingList.length;
+      }
+
+      const statEl = document.getElementById('stat-confession-count');
+      if (statEl) {
+        const approvedCount = CONFESSIONS.filter(c => c.isApproved || c.status === 'APPROVED').length;
+        statEl.innerText = approvedCount;
+      }
+    }
+
+    // --- 4. NAVIGATION ---
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      const target = document.getElementById('tab-' + tabId);
+      if (target) target.classList.add('active');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('text-white', 'bg-slate-800', 'shadow-sm');
+        btn.classList.add('text-slate-400');
+      });
+      const activeNavBtn = document.getElementById('nav-' + tabId);
+      if (activeNavBtn) {
+        activeNavBtn.classList.add('text-white', 'bg-slate-800', 'shadow-sm');
+        activeNavBtn.classList.remove('text-slate-400');
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.location.hash = tabId;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function toggleMobileMenu() {
+      document.getElementById('mobile-menu').classList.toggle('hidden');
+    }
+
+    // --- 5. CONFESSIONS FEED (ONLY APPROVED CONFESSIONS SHOWN TO PUBLIC) ---
+    let confessionFilterCat = "All";
+    let confessionSortOrder = "trending";
+    const CONF_CATEGORIES = ["All", "Academics", "Rants", "Campus Life", "Romance", "Placements", "Hostel"];
+
+    function setConfessionSort(order) {
+      confessionSortOrder = order;
+      document.getElementById('sort-trending').className = `px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${order === 'trending' ? 'bg-slate-800 text-cyan-400 shadow-sm' : 'text-slate-400 hover:text-white'}`;
+      document.getElementById('sort-liked').className = `px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${order === 'liked' ? 'bg-slate-800 text-cyan-400 shadow-sm' : 'text-slate-400 hover:text-white'}`;
+      document.getElementById('sort-recent').className = `px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${order === 'recent' ? 'bg-slate-800 text-cyan-400 shadow-sm' : 'text-slate-400 hover:text-white'}`;
+      renderConfessions();
+    }
+
+    function setConfessionCategory(cat) {
+      confessionFilterCat = cat;
+      renderConfessionCategories();
+      renderConfessions();
+    }
+
+    function renderConfessionCategories() {
+      const container = document.getElementById('confession-category-filters');
+      if (!container) return;
+      container.innerHTML = CONF_CATEGORIES.map(cat => `
+        <button onclick="setConfessionCategory('${cat}')" class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+          confessionFilterCat === cat
+            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-pink-glow'
+            : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+        }">${cat}</button>
+      `).join('');
+    }
+
+    async function toggleLike(id) {
+      const conf = CONFESSIONS.find(c => c.id === id);
+      if (!conf) return;
+
+      if (userLikedConfessions.has(id)) {
+        userLikedConfessions.delete(id);
+        conf.likes = Math.max(0, conf.likes - 1);
+        showToast("Removed upvote");
+      } else {
+        userLikedConfessions.add(id);
+        conf.likes += 1;
+        showToast("Upvoted! ❤️");
+      }
+
+      localStorage.setItem("cse_liked_confessions", JSON.stringify(Array.from(userLikedConfessions)));
+      renderConfessions();
+      renderHomeTrending();
+
+      if (supabase) {
+        try {
+          await supabase.from('confessions').update({ likes: conf.likes }).eq('id', id);
+        } catch (e) {}
+      }
+    }
+
+    function renderConfessions() {
+      const container = document.getElementById('confessions-list');
+      if (!container) return;
+
+      const query = (document.getElementById('confession-search')?.value || '').toLowerCase();
+
+      // STRICT FILTER: Only show APPROVED confessions to the public
+      let list = CONFESSIONS.filter(c => (c.isApproved === true || c.status === 'APPROVED')).filter(c => {
+        const matchesCat = confessionFilterCat === 'All' || c.category === confessionFilterCat;
+        const matchesSearch = c.content.toLowerCase().includes(query) ||
+                              c.alias.toLowerCase().includes(query) ||
+                              (c.tags && c.tags.some(t => t.toLowerCase().includes(query)));
+        return matchesCat && matchesSearch;
+      });
+
+      if (confessionSortOrder === 'trending') {
+        list.sort((a, b) => (b.isTrending ? 1 : 0) - (a.isTrending ? 1 : 0) || b.likes - a.likes);
+      } else if (confessionSortOrder === 'liked') {
+        list.sort((a, b) => b.likes - a.likes);
+      }
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-16 text-center space-y-3 bg-slate-900/40 rounded-3xl border border-slate-800">
+            <i data-lucide="shield-check" class="w-10 h-10 text-slate-600 mx-auto"></i>
+            <p class="text-slate-400 text-sm">No approved confessions found matching your filter.</p>
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = list.map(c => {
+        const isLiked = userLikedConfessions.has(c.id);
+        return `
+          <div class="bg-slate-900/85 rounded-3xl p-6 border border-slate-800 hover:border-pink-500/30 shadow-card-glass transition-all flex flex-col justify-between backdrop-blur-md">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 rounded-xl bg-pink-950/80 border border-pink-500/40 text-pink-400 flex items-center justify-center font-bold text-xs font-mono">
+                    ${c.alias.charAt(0)}
+                  </div>
+                  <div>
+                    <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>${c.alias}</span>
+                      <span class="text-slate-600">•</span>
+                      <span class="text-[11px] font-mono text-cyan-400">${c.batch}</span>
+                    </div>
+                    <span class="text-[10px] text-slate-500 font-mono">${c.timestamp}</span>
+                  </div>
+                </div>
+
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+                  ${c.category}
+                </span>
+              </div>
+
+              <p class="text-sm text-slate-200 leading-relaxed">
+                "${c.content}"
+              </p>
+
+              ${c.tags && c.tags.length > 0 ? `
+                <div class="flex flex-wrap gap-1.5 pt-1">
+                  ${c.tags.map(t => `<span class="text-[11px] font-mono text-cyan-400/80 bg-cyan-950/40 px-2 py-0.5 rounded-md border border-cyan-900/50">${t}</span>`).join('')}
+                </div>
+              ` : ''}
+            </div>
+
+            <div class="pt-5 mt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+              <button onclick="toggleLike('${c.id}')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all ${
+                isLiked ? 'bg-pink-950/80 border-pink-500/50 text-pink-400 shadow-pink-glow' : 'border-slate-800 bg-slate-800/50 text-slate-400 hover:text-white'
+              }">
+                <i data-lucide="heart" class="w-3.5 h-3.5 ${isLiked ? 'fill-pink-400 text-pink-400' : ''}"></i>
+                <span class="font-mono font-semibold">${c.likes}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderHomeTrending() {
+      const container = document.getElementById('home-trending-confessions');
+      if (!container) return;
+
+      const trending = CONFESSIONS.filter(c => (c.isApproved === true || c.status === 'APPROVED')).slice(0, 3);
+      container.innerHTML = trending.map(c => `
+        <div class="bg-slate-900/85 rounded-3xl p-6 border border-slate-800 hover:border-purple-500/40 shadow-card-glass flex flex-col justify-between backdrop-blur-md">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-purple-950 border border-purple-500/40 text-purple-400 flex items-center justify-center font-bold text-xs font-mono">
+                  ${c.alias.charAt(0)}
+                </div>
+                <div>
+                  <span class="text-xs font-bold text-white block">${c.alias}</span>
+                  <span class="text-[10px] font-mono text-cyan-400">${c.batch}</span>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-950 text-purple-300 border border-purple-800">
+                Verified
+              </span>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed line-clamp-4">
+              "${c.content}"
+            </p>
+          </div>
+          <div class="pt-4 mt-4 border-t border-slate-800 flex items-center justify-between text-xs">
+            <button onclick="toggleLike('${c.id}')" class="text-pink-400 flex items-center gap-1">
+              <i data-lucide="heart" class="w-3.5 h-3.5 fill-pink-400"></i> ${c.likes}
+            </button>
+            <button onclick="switchTab('confessions')" class="text-cyan-400 hover:underline flex items-center gap-1">
+              Open Feed <i data-lucide="arrow-right" class="w-3 h-3"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // --- 6. RESOURCES & OPPORTUNITIES LOGIC ---
+    function renderResourceFilters() {
+      const semContainer = document.getElementById('resource-semester-pills');
+      if (semContainer) {
+        semContainer.innerHTML = ["All", "Semester 1-2", "Semester 3", "Semester 4", "Semester 5", "Semester 6", "Semester 7-8"].map(s => `
+          <button onclick="setResourceSemester('${s}')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-slate-900 border border-slate-800 text-slate-400 hover:text-white">${s}</button>
+        `).join('');
+      }
+    }
+
+    function renderResources() {
+      const container = document.getElementById('resources-list');
+      if (!container) return;
+      container.innerHTML = RESOURCES.map(r => `
+        <div class="bg-slate-900/85 rounded-3xl p-6 border border-slate-800 flex flex-col justify-between">
+          <div class="space-y-3">
+            <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-500/30">${r.subjectCode}</span>
+            <h3 class="text-base font-bold text-white">${r.title}</h3>
+            <p class="text-xs text-slate-400">${r.description}</p>
+          </div>
+          <a href="${r.linkUrl}" target="_blank" class="mt-4 block py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-purple-400 text-slate-950 font-bold text-xs text-center">Access Resource</a>
+        </div>
+      `).join('');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderOpportunities() {
+      const container = document.getElementById('opportunities-list');
+      if (!container) return;
+      container.innerHTML = OPPORTUNITIES.map(o => `
+        <div class="bg-slate-900/85 rounded-3xl p-6 border border-slate-800 flex flex-col justify-between">
+          <div class="space-y-3">
+            <span class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-purple-950 text-purple-300 border border-purple-500/30">${o.type}</span>
+            <h3 class="text-lg font-bold text-white">${o.title}</h3>
+            <p class="text-xs text-slate-300">${o.description}</p>
+          </div>
+          <a href="${o.applyUrl}" target="_blank" class="mt-4 block py-2.5 rounded-xl bg-purple-500 text-slate-950 font-bold text-xs text-center">Apply Now</a>
+        </div>
+      `).join('');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderEvents() {
+      const container = document.getElementById('events-list');
+      if (!container) return;
+      container.innerHTML = EVENTS.map(e => `
+        <div class="bg-slate-900/85 rounded-3xl p-6 border border-slate-800 flex flex-col justify-between">
+          <div class="space-y-3">
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-emerald-300">${e.category}</span>
+            <h3 class="text-base font-bold text-white">${e.title}</h3>
+            <p class="text-xs text-slate-400">${e.description}</p>
+          </div>
+        </div>
+      `).join('');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderRules() {
+      const container = document.getElementById('rules-list');
+      if (!container) return;
+      container.innerHTML = RULES.map(r => `
+        <div class="bg-slate-900/85 rounded-3xl p-6 border border-slate-800 space-y-3">
+          <h3 class="text-lg font-bold text-white">${r.num}. ${r.title}</h3>
+          <p class="text-xs text-slate-300">${r.summary}</p>
+        </div>
+      `).join('');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // --- 7. SUBMIT FORM CONTROLLER (SUBMITS AS PENDING TO ADMIN QUEUE) ---
+    const ALIAS_POOL = ["BitwiseWanderer", "NullPointerCupid", "SyntaxErrorSurvivor", "ValgrindFanatic", "BinaryBeast", "CoffeeToCode", "GDB_Ghost"];
+
+    function shuffleAlias() {
+      const random = ALIAS_POOL[Math.floor(Math.random() * ALIAS_POOL.length)];
+      const el = document.getElementById('conf-alias');
+      if (el) el.value = random;
+    }
+
+    function setSubmitType(type) {
+      ['confession', 'resource', 'opportunity', 'event'].forEach(t => {
+        const form = document.getElementById(`form-${t}`);
+        const tab = document.getElementById(`submit-tab-${t}`);
+        if (form) form.classList.add('hidden');
+        if (tab) {
+          tab.classList.remove('bg-slate-800', 'text-pink-300', 'text-cyan-300', 'text-purple-300', 'text-emerald-300', 'border');
+          tab.classList.add('text-slate-400');
+        }
+      });
+
+      const activeForm = document.getElementById(`form-${type}`);
+      const activeTab = document.getElementById(`submit-tab-${type}`);
+      if (activeForm) activeForm.classList.remove('hidden');
+      if (activeTab) {
+        activeTab.classList.add('bg-slate-800', 'border');
+        activeTab.classList.remove('text-slate-400');
+        if (type === 'confession') activeTab.classList.add('text-pink-300', 'border-pink-500/40');
+        if (type === 'resource') activeTab.classList.add('text-cyan-300', 'border-cyan-500/40');
+        if (type === 'opportunity') activeTab.classList.add('text-purple-300', 'border-purple-500/40');
+        if (type === 'event') activeTab.classList.add('text-emerald-300', 'border-emerald-500/40');
+      }
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    async function handleConfessionSubmit(e) {
+      e.preventDefault();
+      const alias = document.getElementById('conf-alias').value;
+      const batch = document.getElementById('conf-batch').value;
+      const category = document.getElementById('conf-category').value;
+      const content = document.getElementById('conf-content').value;
+      const tagsStr = document.getElementById('conf-tags').value;
+      const tags = tagsStr.split(' ').filter(t => t.startsWith('#'));
+
+      // New Confession starts as PENDING / isApproved = false (NOT visible to public)
+      const newConf = {
+        id: "conf-" + Date.now(),
+        alias: alias || "AnonymousCoder",
+        batch: batch || "CSE '26",
+        timestamp: "Just now",
+        category: category,
+        content: content,
+        likes: 0,
+        isTrending: false,
+        status: "PENDING",
+        isApproved: false,
+        tags: tags.length > 0 ? tags : ["#CSECommunity"],
+        comments: []
+      };
+
+      // Add to internal list
+      CONFESSIONS.unshift(newConf);
+      updateAdminBadgeCount();
+
+      // Show clear confirmation toast
+      showToast("🔒 Confession sent to Admin Review Queue! Only Admin can see it.");
+      document.getElementById('conf-content').value = "";
+
+      // Send to Supabase with status = 'PENDING' & is_approved = false
+      if (supabase) {
+        try {
+          await supabase.from('confessions').insert([{
+            alias: newConf.alias,
+            batch: newConf.batch,
+            category: newConf.category,
+            content: newConf.content,
+            tags: newConf.tags,
+            likes: 0,
+            is_trending: false,
+            status: "PENDING",
+            is_approved: false
+          }]);
+        } catch (err) {
+          console.log("Supabase insert:", err);
+        }
+      }
+
+      // Switch to home
+      switchTab('home');
+    }
+
+    function handleResourceSubmit(e) {
+      e.preventDefault();
+      showToast("📚 Resource uploaded!");
+      e.target.reset();
+      switchTab('resources');
+    }
+
+    function handleOpportunitySubmit(e) {
+      e.preventDefault();
+      showToast("🚀 Opportunity published!");
+      e.target.reset();
+      switchTab('opportunities');
+    }
+
+    function handleEventSubmit(e) {
+      e.preventDefault();
+      showToast("🗓️ Event published!");
+      e.target.reset();
+      switchTab('events');
+    }
+
+    // --- 8. ADMIN & MODERATION CONTROL CENTER ---
+    let isAdminAuth = false;
+
+    function handleAdminLogin(e) {
+      e.preventDefault();
+      const pass = document.getElementById('admin-passcode-input').value;
+      const errEl = document.getElementById('admin-auth-error');
+
+      if (pass === ADMIN_PASSCODE) {
+        isAdminAuth = true;
+        document.getElementById('admin-gate').classList.add('hidden');
+        document.getElementById('admin-dashboard').classList.remove('hidden');
+        showToast("Admin session authorized ✓");
+        loadConfessionsFromBackend();
+        renderAdminTables();
+      } else {
+        errEl.innerText = "Invalid passcode. Access restricted.";
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    function adminLogout() {
+      isAdminAuth = false;
+      document.getElementById('admin-passcode-input').value = "";
+      document.getElementById('admin-gate').classList.remove('hidden');
+      document.getElementById('admin-dashboard').classList.add('hidden');
+      showToast("Admin session ended.");
+    }
+
+    function setAdminSubTab(tab) {
+      ['pending', 'approved', 'resources', 'reports'].forEach(t => {
+        const el = document.getElementById(`admin-panel-${t}`);
+        const tabBtn = document.getElementById(`admin-tab-${t}`);
+        if (el) el.classList.add('hidden');
+        if (tabBtn) tabBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap';
+      });
+
+      const activeEl = document.getElementById(`admin-panel-${tab}`);
+      const activeTabBtn = document.getElementById(`admin-tab-${tab}`);
+      if (activeEl) activeEl.classList.remove('hidden');
+      if (activeTabBtn) {
+        activeTabBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-pink-400 border border-pink-500/30 flex items-center gap-1.5 whitespace-nowrap';
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // ADMIN ACTION: APPROVE CONFESSION (Makes it visible to public)
+    async function approveConfession(id) {
+      const conf = CONFESSIONS.find(c => c.id === id);
+      if (!conf) return;
+
+      conf.status = 'APPROVED';
+      conf.isApproved = true;
+
+      showToast(`✓ Confession by ${conf.alias} APPROVED & Published Live!`);
+      renderAdminTables();
+      renderConfessions();
+      renderHomeTrending();
+      updateAdminBadgeCount();
+
+      if (supabase) {
+        try {
+          await supabase.from('confessions').update({ status: 'APPROVED', is_approved: true }).eq('id', id);
+        } catch (e) {}
+      }
+    }
+
+    // ADMIN ACTION: REJECT / DELETE CONFESSION
+    async function rejectConfession(id) {
+      if (!confirm("Are you sure you want to permanently delete this confession?")) return;
+      CONFESSIONS = CONFESSIONS.filter(c => c.id !== id);
+      showToast("Confession rejected and purged.");
+      renderAdminTables();
+      renderConfessions();
+      renderHomeTrending();
+      updateAdminBadgeCount();
+
+      if (supabase) {
+        try {
+          await supabase.from('confessions').delete().eq('id', id);
+        } catch (e) {}
+      }
+    }
+
+    function renderAdminTables() {
+      // 1. Pending Table (Waiting for your approval)
+      const pendingContainer = document.getElementById('admin-pending-table');
+      if (pendingContainer) {
+        const pendingList = CONFESSIONS.filter(c => !c.isApproved && c.status !== 'APPROVED');
+        if (pendingList.length === 0) {
+          pendingContainer.innerHTML = `
+            <div class="p-8 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-2">
+              <i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-400 mx-auto"></i>
+              <p class="text-sm text-slate-300 font-bold">Review Queue is Clear!</p>
+              <p class="text-xs text-slate-500">No new student confessions waiting for review.</p>
+            </div>
+          `;
+        } else {
+          pendingContainer.innerHTML = pendingList.map(c => `
+            <div class="bg-slate-900 p-5 rounded-2xl border border-pink-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
+              <div class="space-y-2 max-w-2xl">
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-white text-sm">${c.alias}</span>
+                  <span class="text-cyan-400 font-mono">${c.batch}</span>
+                  <span class="text-slate-500">• ${c.category}</span>
+                  <span class="px-2 py-0.5 rounded bg-pink-950 text-pink-300 border border-pink-800 font-mono">PENDING APPROVAL</span>
+                </div>
+                <p class="text-slate-200 text-sm leading-relaxed bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+                  "${c.content}"
+                </p>
+                <div class="text-[11px] text-slate-500 font-mono">Submitted: ${c.timestamp}</div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <button onclick="approveConfession('${c.id}')" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg active:scale-95 transition-all">
+                  <i data-lucide="check" class="w-4 h-4"></i>
+                  <span>Approve & Publish Live</span>
+                </button>
+                <button onclick="rejectConfession('${c.id}')" class="px-3.5 py-2.5 rounded-xl bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800 text-xs font-semibold flex items-center gap-1">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  <span>Reject</span>
+                </button>
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+
+      // 2. Approved Table (Live Confessions)
+      const approvedContainer = document.getElementById('admin-approved-table');
+      if (approvedContainer) {
+        const approvedList = CONFESSIONS.filter(c => c.isApproved || c.status === 'APPROVED');
+        approvedContainer.innerHTML = approvedList.map(c => `
+          <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex items-center justify-between gap-4 text-xs">
+            <div class="space-y-1 max-w-xl">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-white">${c.alias} (${c.batch})</span>
+                <span class="text-slate-500">• ${c.category}</span>
+                <span class="text-emerald-400 font-mono text-[10px]">● LIVE PUBLIC</span>
+              </div>
+              <p class="text-slate-300 line-clamp-1">"${c.content}"</p>
+            </div>
+            <button onclick="rejectConfession('${c.id}')" class="px-3 py-1.5 rounded-lg bg-rose-950 text-rose-300 border border-rose-800 hover:bg-rose-900">
+              Unpublish / Purge
+            </button>
+          </div>
+        `).join('');
+      }
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // --- 9. TOAST NOTIFICATION HELPER ---
+    function showToast(msg) {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = 'px-4 py-3 rounded-2xl bg-slate-900/95 border border-cyan-500/40 text-white text-xs font-semibold shadow-cyan-glow flex items-center gap-2 pointer-events-auto transition-all';
+      toast.innerHTML = `<i data-lucide="shield-check" class="w-4 h-4 text-cyan-400 shrink-0"></i> <span>${msg}</span>`;
+
+      container.appendChild(toast);
+      if (window.lucide) lucide.createIcons();
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // --- 10. INITIALIZATION ---
+    window.addEventListener('DOMContentLoaded', () => {
+      renderConfessionCategories();
+      renderConfessions();
+      renderHomeTrending();
+      renderResourceFilters();
+      renderResources();
+      renderOpportunities();
+      renderEvents();
+      renderRules();
+
+      loadConfessionsFromBackend();
+      setupRealtimeListener();
+
+      const hash = window.location.hash.replace('#', '');
+      if (hash && document.getElementById('tab-' + hash)) {
+        switchTab(hash);
+      }
+
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

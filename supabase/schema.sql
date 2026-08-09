@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS public.confessions (
   content TEXT NOT NULL,
   likes INTEGER DEFAULT 0,
   is_trending BOOLEAN DEFAULT false,
+  status TEXT DEFAULT 'PENDING',
+  is_approved BOOLEAN DEFAULT false,
   tags TEXT[] DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
