@@ -295,6 +295,25 @@ export default function AdminPage() {
     }
   };
 
+  // Action: Toggle Resource Verified Badge
+  const handleToggleVerifyResource = async (resourceId: string, currentVerified?: boolean) => {
+    const nextState = !Boolean(currentVerified);
+    setResources((prev) =>
+      prev.map((r) => (r.id === resourceId ? { ...r, verified: nextState } : r))
+    );
+    setToastMessage(nextState ? "Resource marked as Verified ✓" : "Verification badge removed");
+
+    try {
+      await fetch(`/api/admin/resources/${resourceId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ verified: nextState }),
+      });
+    } catch {
+      // Optimistic update
+    }
+  };
+
   // Action: Delete Opportunity
   const handleDeleteOpportunity = async (oppId: string) => {
     if (!confirm("Are you sure you want to permanently delete this opportunity listing?")) return;
