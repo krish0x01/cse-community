@@ -29,6 +29,18 @@ CREATE POLICY "Allow delete on resources" ON public.resources FOR DELETE USING (
 DROP POLICY IF EXISTS "Allow update on resources" ON public.resources;
 CREATE POLICY "Allow update on resources" ON public.resources FOR UPDATE USING (true);
 
+DROP POLICY IF EXISTS "Allow delete on opportunities" ON public.opportunities;
+CREATE POLICY "Allow delete on opportunities" ON public.opportunities FOR DELETE USING (true);
+
+DROP POLICY IF EXISTS "Allow update on opportunities" ON public.opportunities;
+CREATE POLICY "Allow update on opportunities" ON public.opportunities FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Allow delete on events" ON public.events;
+CREATE POLICY "Allow delete on events" ON public.events FOR DELETE USING (true);
+
+DROP POLICY IF EXISTS "Allow update on events" ON public.events;
+CREATE POLICY "Allow update on events" ON public.events FOR UPDATE USING (true);
+
 DROP POLICY IF EXISTS "Allow delete on reports" ON public.reports;
 CREATE POLICY "Allow delete on reports" ON public.reports FOR DELETE USING (true);
 

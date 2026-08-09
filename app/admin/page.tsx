@@ -7,6 +7,7 @@ import {
   MessageSquareQuote,
   FileCode2,
   Sparkles,
+  Calendar,
   Trash2,
   Flame,
   CheckCircle2,
@@ -17,10 +18,19 @@ import {
   RefreshCw,
   ExternalLink,
   ShieldCheck,
+  Star,
+  MapPin,
+  Clock,
+  User,
 } from "lucide-react";
 import Toast from "@/components/Toast";
-import { Confession, Resource, Opportunity } from "@/lib/types";
-import { MOCK_CONFESSIONS, MOCK_RESOURCES, MOCK_OPPORTUNITIES } from "@/lib/mock-data";
+import { Confession, Resource, Opportunity, EventItem } from "@/lib/types";
+import {
+  MOCK_CONFESSIONS,
+  MOCK_RESOURCES,
+  MOCK_OPPORTUNITIES,
+  MOCK_EVENTS,
+} from "@/lib/mock-data";
 
 interface ReportItem {
   id: string;
@@ -36,12 +46,15 @@ export default function AdminPage() {
   const [passcode, setPasscode] = useState("");
   const [authError, setAuthError] = useState("");
 
-  const [activeTab, setActiveTab] = useState<"reports" | "confessions" | "resources" | "opportunities" | "telemetry">("confessions");
+  const [activeTab, setActiveTab] = useState<
+    "reports" | "confessions" | "resources" | "opportunities" | "events" | "telemetry"
+  >("confessions");
   const [confessionFilter, setConfessionFilter] = useState<"pending" | "approved" | "all">("pending");
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [confessions, setConfessions] = useState<Confession[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSupabaseLive, setIsSupabaseLive] = useState(false);
@@ -91,6 +104,61 @@ export default function AdminPage() {
         setOpportunities(MOCK_OPPORTUNITIES);
       } else {
         setOpportunities([]);
+      }
+
+      // 5. Fetch Events
+      const resEvt = await fetch("/api/events");
+      const dataEvt = await resEvt.json();
+      if (dataEvt.data && Array.isArray(dataEvt.data)) {
+        interface RawEvent {
+          id: string;
+          title: string;
+          category: string;
+          date: string;
+          time: string;
+          venue: string;
+          is_online?: boolean;
+          isOnline?: boolean;
+          speaker_name?: string;
+          speaker_role?: string;
+          speaker_company?: string;
+          speaker?: {
+            name: string;
+            role: string;
+            company: string;
+            avatar?: string;
+          };
+          registered_count?: number;
+          registeredCount?: number;
+          max_capacity?: number;
+          maxCapacity?: number;
+          tags?: string[];
+          description?: string;
+        }
+
+        const normalized: EventItem[] = (dataEvt.data as RawEvent[]).map((e) => ({
+          id: e.id,
+          title: e.title,
+          category: e.category as "Tech Talk" | "Workshop" | "Meetup",
+          date: e.date,
+          time: e.time,
+          venue: e.venue,
+          isOnline: e.is_online ?? e.isOnline ?? false,
+          speaker: e.speaker || {
+            name: e.speaker_name || "Campus Speaker",
+            role: e.speaker_role || "Tech Lead",
+            company: e.speaker_company || "CSE Community",
+          },
+          registeredCount: e.registered_count ?? e.registeredCount ?? 0,
+          maxCapacity: e.max_capacity ?? e.maxCapacity ?? 100,
+          tags: e.tags || [],
+          description: e.description || "",
+        }));
+        setEvents(normalized);
+      } else if (dataEvt.source === "mock") {
+        setEvents(MOCK_EVENTS);
+      } else {
+        setEvents([]);
       }
     } catch {
       setToastMessage("⚠️ Failed to refresh some admin feeds");
@@ -219,20 +287,48 @@ export default function AdminPage() {
     }
   };
 
-  // Action: Toggle Resource Verified Badge
-  const handleToggleVerifyResource = async (resourceId: string, currentVerified?: boolean) => {
-    const nextState = !Boolean(currentVerified);
-    setResources((prev) =>
-      prev.map((r) => (r.id === resourceId ? { ...r, verified: nextState } : r))
-    );
-    setToastMessage(nextState ? "Resource marked as Verified ✓" : "Verification badge removed");
+  // Action: Delete Opportunity
+  const handleDeleteOpportunity = async (oppId: string) => {
+    if (!confirm("Are you sure you want to permanently delete this opportunity listing?")) return;
+
+    setOpportunities((prev) => prev.filter((o) => o.id !== oppId));
+    setToastMessage("Opportunity listing deleted from database ✓");
 
     try {
-      await fetch(`/api/admin/resources/${resourceId}`, {
+      await fetch(`/api/admin/opportunities/${oppId}`, { method: "DELETE" });
+    } catch {
+      // Optimistic update
+    }
+  };
+
+  // Action: Toggle Opportunity Featured
+  const handleToggleFeatureOpportunity = async (oppId: string, currentFeatured?: boolean) => {
+    const nextState = !Boolean(currentFeatured);
+    setOpportunities((prev) =>
+      prev.map((o) => (o.id === oppId ? { ...o, isFeatured: nextState } : o))
+    );
+    setToastMessage(nextState ? "Marked as Featured Opportunity ★" : "Removed from Featured");
+
+    try {
+      await fetch(`/api/admin/opportunities/${oppId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ verified: nextState }),
+        body: JSON.stringify({ isFeatured: nextState }),
       });
+    } catch {
+      // Optimistic update
+    }
+  };
+
+  // Action: Delete Event
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!confirm("Are you sure you want to permanently cancel and delete this campus event?")) return;
+
+    setEvents((prev) => prev.filter((e) => e.id !== eventId));
+    setToastMessage("Campus event removed from schedule ✓");
+
+    try {
+      await fetch(`/api/admin/events/${eventId}`, { method: "DELETE" });
     } catch {
       // Optimistic update
     }
@@ -337,8 +433,8 @@ export default function AdminPage() {
       </div>
 
       {/* Telemetry Counter Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className="bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md">
           <div className="flex items-center justify-between text-xs font-mono text-slate-400">
             <span>Pending Authorizations</span>
             <ShieldAlert className={`w-4 h-4 ${pendingConfessionsCount > 0 ? "text-amber-400 animate-pulse" : "text-slate-500"}`} />
@@ -346,10 +442,10 @@ export default function AdminPage() {
           <div className={`text-2xl sm:text-3xl font-extrabold font-mono ${pendingConfessionsCount > 0 ? "text-amber-400" : "text-white"}`}>
             {pendingConfessionsCount}
           </div>
-          <span className="text-[11px] text-slate-500">Confessions awaiting approval</span>
+          <span className="text-[11px] text-slate-500">Confessions queue</span>
         </div>
 
-        <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md">
+        <div className="bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md">
           <div className="flex items-center justify-between text-xs font-mono text-slate-400">
             <span>Incident Reports</span>
             <ShieldAlert className={`w-4 h-4 ${pendingReportsCount > 0 ? "text-rose-400 animate-pulse" : "text-slate-500"}`} />
@@ -357,29 +453,40 @@ export default function AdminPage() {
           <div className={`text-2xl sm:text-3xl font-extrabold font-mono ${pendingReportsCount > 0 ? "text-rose-400" : "text-white"}`}>
             {pendingReportsCount}
           </div>
-          <span className="text-[11px] text-slate-500">Requires rule review</span>
+          <span className="text-[11px] text-slate-500">Requires review</span>
         </div>
 
-        <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md">
+        <div className="bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md">
           <div className="flex items-center justify-between text-xs font-mono text-slate-400">
             <span>Academic Vault</span>
-            <FileCode2 className="w-4 h-4 text-purple-400" />
+            <FileCode2 className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold font-mono text-white">
             {resources.length}
           </div>
-          <span className="text-[11px] text-slate-500">{resources.filter((r) => r.verified).length} Verified Files</span>
+          <span className="text-[11px] text-slate-500">{resources.filter((r) => r.verified).length} Verified</span>
         </div>
 
-        <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md">
+        <div className="bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md">
           <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-            <span>Active Radars</span>
-            <Sparkles className="w-4 h-4 text-cyan-400" />
+            <span>Opportunities</span>
+            <Sparkles className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold font-mono text-white">
             {opportunities.length}
           </div>
-          <span className="text-[11px] text-slate-500">Hackathons & Internships</span>
+          <span className="text-[11px] text-slate-500">Active Listings</span>
+        </div>
+
+        <div className="bg-slate-900/80 p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-1 backdrop-blur-md col-span-2 sm:col-span-1">
+          <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+            <span>Campus Events</span>
+            <Calendar className="w-4 h-4 text-purple-400" />
+          </div>
+          <div className="text-2xl sm:text-3xl font-extrabold font-mono text-white">
+            {events.length}
+          </div>
+          <span className="text-[11px] text-slate-500">Talks & Workshops</span>
         </div>
       </div>
 
@@ -387,31 +494,31 @@ export default function AdminPage() {
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto scrollbar-none">
         <button
           onClick={() => setActiveTab("confessions")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all ${
             activeTab === "confessions"
               ? "bg-purple-950/80 text-purple-300 border border-purple-500/50 shadow-purple"
               : "text-slate-400 hover:text-white"
           }`}
         >
           <MessageSquareQuote className="w-4 h-4 text-purple-400" />
-          <span>Confessions Authorization ({pendingConfessionsCount} pending)</span>
+          <span>Confessions ({pendingConfessionsCount} pending)</span>
         </button>
 
         <button
           onClick={() => setActiveTab("reports")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all ${
             activeTab === "reports"
               ? "bg-rose-950/80 text-rose-300 border border-rose-500/50 shadow-sm"
               : "text-slate-400 hover:text-white"
           }`}
         >
           <ShieldAlert className="w-4 h-4 text-rose-400" />
-          <span>Incident Reports ({pendingReportsCount})</span>
+          <span>Reports ({pendingReportsCount})</span>
         </button>
 
         <button
           onClick={() => setActiveTab("resources")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all ${
             activeTab === "resources"
               ? "bg-cyan-950/80 text-cyan-300 border border-cyan-500/50 shadow-cyan"
               : "text-slate-400 hover:text-white"
@@ -423,26 +530,38 @@ export default function AdminPage() {
 
         <button
           onClick={() => setActiveTab("opportunities")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all ${
             activeTab === "opportunities"
               ? "bg-amber-950/80 text-amber-300 border border-amber-500/50"
               : "text-slate-400 hover:text-white"
           }`}
         >
           <Sparkles className="w-4 h-4 text-amber-400" />
-          <span>Opportunity Radar ({opportunities.length})</span>
+          <span>Opportunities ({opportunities.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("events")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all ${
+            activeTab === "events"
+              ? "bg-purple-950/80 text-purple-300 border border-purple-500/50"
+              : "text-slate-400 hover:text-white"
+          }`}
+        >
+          <Calendar className="w-4 h-4 text-purple-400" />
+          <span>Campus Events ({events.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab("telemetry")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all ${
             activeTab === "telemetry"
               ? "bg-slate-800 text-slate-200 border border-slate-700"
               : "text-slate-400 hover:text-white"
           }`}
         >
           <Database className="w-4 h-4 text-cyan-400" />
-          <span>Database Telemetry</span>
+          <span>Telemetry</span>
         </button>
       </div>
 
@@ -454,246 +573,223 @@ export default function AdminPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setConfessionFilter("pending")}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                className={`px-4 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
                   confessionFilter === "pending"
-                    ? "bg-amber-950/80 text-amber-300 border border-amber-500/50 shadow-sm"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/50 shadow-sm"
+                    : "bg-slate-800/80 text-slate-400 hover:text-white"
                 }`}
               >
                 <span>⏳ Pending Authorization</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 text-[10px]">
+                <span className="px-1.5 py-0.2 rounded-full bg-amber-950 text-amber-300 text-[10px] font-mono">
                   {pendingConfessionsCount}
                 </span>
               </button>
 
               <button
                 onClick={() => setConfessionFilter("approved")}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                className={`px-4 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
                   confessionFilter === "approved"
-                    ? "bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 shadow-sm"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 shadow-sm"
+                    : "bg-slate-800/80 text-slate-400 hover:text-white"
                 }`}
               >
                 <span>✅ Live / Published</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px]">
+                <span className="px-1.5 py-0.2 rounded-full bg-emerald-950 text-emerald-300 text-[10px] font-mono">
                   {approvedConfessionsCount}
                 </span>
               </button>
 
               <button
                 onClick={() => setConfessionFilter("all")}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                   confessionFilter === "all"
-                    ? "bg-slate-800 text-white border border-slate-700"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-purple-500/20 text-purple-300 border border-purple-500/50"
+                    : "bg-slate-800/80 text-slate-400 hover:text-white"
                 }`}
               >
-                <span>📋 All ({confessions.length})</span>
+                All Confessions ({confessions.length})
               </button>
             </div>
 
-            <span className="text-xs text-slate-400 font-mono">
-              Moderation Policy: <strong>Authorization Required Prior to Publishing</strong>
-            </span>
+            <div className="text-xs font-mono text-slate-400">
+              ⚡ Authorization Queue Active
+            </div>
           </div>
 
-          {/* Confessions List */}
-          {confessions.filter((c) => {
-            const isPending = c.isApproved === false || c.status === "PENDING";
-            if (confessionFilter === "pending") return isPending;
-            if (confessionFilter === "approved") return !isPending;
-            return true;
-          }).length === 0 ? (
-            <div className="bg-slate-900/80 rounded-3xl p-12 text-center border border-slate-800 space-y-3">
+          {filteredConfessions.length === 0 ? (
+            <div className="text-center py-16 bg-slate-900/60 rounded-3xl border border-slate-800 p-8 space-y-3">
               <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
               <h3 className="text-lg font-bold text-white">
                 {confessionFilter === "pending"
-                  ? "Zero Pending Confessions!"
-                  : "No Confessions Found"}
+                  ? "All caught up! No confessions waiting for authorization."
+                  : "No confessions in this filter."}
               </h3>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                {confessionFilter === "pending"
-                  ? "All student submissions have been reviewed and authorized. New submissions will appear here for authorization."
-                  : "No confessions matched the current filter criteria."}
+                Student submissions will appear here instantly when posted.
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {confessions
-                .filter((c) => {
-                  const isPending = c.isApproved === false || c.status === "PENDING";
-                  if (confessionFilter === "pending") return isPending;
-                  if (confessionFilter === "approved") return !isPending;
-                  return true;
-                })
-                .map((conf) => {
-                  const isPending = conf.isApproved === false || conf.status === "PENDING";
-                  return (
-                    <div
-                      key={conf.id}
-                      className={`p-5 rounded-2xl border space-y-4 flex flex-col justify-between transition-all ${
-                        isPending
-                          ? "bg-slate-900/95 border-amber-500/50 shadow-md shadow-amber-500/5"
-                          : "bg-slate-900/80 border-slate-800 hover:border-slate-700"
-                      }`}
-                    >
-                      <div>
-                        {/* Header Badge Row */}
-                        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-bold text-cyan-300">
-                              {conf.alias} ({conf.batch})
-                            </span>
-                            <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                              {conf.category}
-                            </span>
-                            {isPending ? (
-                              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-500/40 font-bold animate-pulse">
-                                ⏳ Pending Authorization
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40 font-semibold">
-                                ✅ Live & Published
-                              </span>
-                            )}
-                          </div>
+              {filteredConfessions.map((confession) => {
+                const isPending = confession.isApproved === false || confession.status === "PENDING";
 
-                          <span className="text-[11px] text-slate-500 font-mono">{conf.timestamp}</span>
-                        </div>
-
-                        {/* Confession Body */}
-                        <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
-                          {conf.content}
-                        </p>
-
-                        {/* Tags */}
-                        {conf.tags && conf.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mt-3">
-                            {conf.tags.map((tag, i) => (
-                              <span
-                                key={i}
-                                className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-950 text-slate-400 border border-slate-800"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Action Bar */}
-                      <div className="pt-3 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2">
-                        <div className="text-xs text-slate-400 font-mono">
-                          ❤️ {conf.likes} likes • 💬 {conf.comments?.length || 0} replies
+                return (
+                  <div
+                    key={confession.id}
+                    className={`p-5 rounded-2xl border space-y-4 flex flex-col justify-between transition-all ${
+                      isPending
+                        ? "bg-amber-950/20 border-amber-500/40 shadow-lg"
+                        : "bg-slate-900/85 border-slate-800"
+                    }`}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-cyan-300">
+                            {confession.alias}
+                          </span>
+                          <span className="text-xs text-slate-500">•</span>
+                          <span className="text-xs text-slate-400 font-mono">
+                            {confession.batch}
+                          </span>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {isPending ? (
-                            /* PENDING ACTIONS: AUTHORIZE OR REJECT */
-                            <>
-                              <button
-                                onClick={() => handleAuthorizeConfession(conf.id, true)}
-                                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 transition-all active:scale-95"
-                              >
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>Authorize & Publish ✓</span>
-                              </button>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider ${
+                              isPending
+                                ? "bg-amber-500/20 text-amber-300 border border-amber-500/50 animate-pulse"
+                                : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/50"
+                            }`}
+                          >
+                            {isPending ? "⏳ Pending Review" : "✓ Live"}
+                          </span>
 
-                              <button
-                                onClick={() => handleDeleteConfession(conf.id)}
-                                className="px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900 border border-rose-500/40 text-rose-300 text-xs font-semibold flex items-center gap-1 transition-colors"
-                                title="Reject and delete"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Reject</span>
-                              </button>
-                            </>
-                          ) : (
-                            /* APPROVED ACTIONS: FEATURE, REVOKE, DELETE */
-                            <>
-                              <button
-                                onClick={() => handleToggleTrending(conf.id, conf.isTrending)}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors ${
-                                  conf.isTrending
-                                    ? "bg-rose-950 text-rose-300 border border-rose-500/50"
-                                    : "bg-slate-800 text-slate-400 hover:text-white border border-slate-700"
-                                }`}
-                              >
-                                <Flame className={`w-3.5 h-3.5 ${conf.isTrending ? "fill-rose-400 text-rose-400" : ""}`} />
-                                <span>{conf.isTrending ? "Trending" : "Feature"}</span>
-                              </button>
-
-                              <button
-                                onClick={() => handleAuthorizeConfession(conf.id, false)}
-                                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-mono transition-colors"
-                                title="Revoke live status and send back to pending"
-                              >
-                                Revoke
-                              </button>
-
-                              <button
-                                onClick={() => handleDeleteConfession(conf.id)}
-                                className="p-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-500/30 transition-colors"
-                                title="Delete permanently"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </>
-                          )}
+                          <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-xs font-mono">
+                            {confession.category}
+                          </span>
                         </div>
                       </div>
+
+                      <p className="text-xs sm:text-sm text-slate-200 leading-relaxed italic bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/80">
+                        &ldquo;{confession.content}&rdquo;
+                      </p>
+
+                      {confession.tags && confession.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {confession.tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="text-[11px] font-mono text-slate-400 px-2 py-0.5 rounded-md bg-slate-800/60"
+                            >
+                              {tag.startsWith("#") ? tag : `#${tag}`}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
+
+                    <div className="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-3 text-xs font-mono text-slate-400">
+                        <span>❤️ {confession.likes} upvotes</span>
+                        <span>💬 {confession.comments?.length || 0} comments</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {isPending ? (
+                          <>
+                            <button
+                              onClick={() => handleAuthorizeConfession(confession.id, true)}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Authorize & Publish Live ✓</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleAuthorizeConfession(confession.id, false)}
+                              className="px-2.5 py-1.5 rounded-xl bg-rose-950 hover:bg-rose-900 border border-rose-500/40 text-rose-300 text-xs font-semibold transition-colors"
+                              title="Reject Confession"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleToggleTrending(confession.id, confession.isTrending)}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors ${
+                                confession.isTrending
+                                  ? "bg-pink-950 text-pink-300 border border-pink-500/50"
+                                  : "bg-slate-800 text-slate-400 hover:text-white border border-slate-700"
+                              }`}
+                              title="Toggle Trending Spotlight"
+                            >
+                              <Flame className="w-3.5 h-3.5 text-pink-400" />
+                              <span>{confession.isTrending ? "🔥 Trending" : "Trend"}</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleAuthorizeConfession(confession.id, false)}
+                              className="px-2.5 py-1.5 rounded-xl bg-amber-950/60 hover:bg-amber-900 border border-amber-500/30 text-amber-300 text-xs font-semibold"
+                              title="Revoke Approval (Move to Pending)"
+                            >
+                              Revoke
+                            </button>
+                          </>
+                        )}
+
+                        <button
+                          onClick={() => handleDeleteConfession(confession.id)}
+                          className="p-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-500/30 transition-colors"
+                          title="Permanently Delete Confession"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
       )}
 
-      {/* TAB 2: INCIDENT REPORTS QUEUE */}
+      {/* TAB 2: INCIDENT REPORTS & COMPLAINTS */}
       {activeTab === "reports" && (
         <div className="space-y-4 animate-fade-in">
           {reports.length === 0 ? (
-            <div className="bg-slate-900/80 rounded-3xl p-12 text-center border border-slate-800 space-y-3">
-              <ShieldCheck className="w-12 h-12 text-emerald-400 mx-auto" />
-              <h3 className="text-lg font-bold text-white">Zero Pending Violations</h3>
+            <div className="text-center py-16 bg-slate-900/60 rounded-3xl border border-slate-800 p-8 space-y-3">
+              <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
+              <h3 className="text-lg font-bold text-white">Zero Active Reports</h3>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                No active honor code reports queued for review. All community content adheres to guidelines.
+                No policy violations or inappropriate content flags currently filed.
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-4">
               {reports.map((report) => (
                 <div
                   key={report.id}
-                  className={`p-5 rounded-2xl border transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
-                    report.status === "PENDING_REVIEW"
-                      ? "bg-slate-900/90 border-rose-500/40 shadow-sm"
-                      : "bg-slate-900/50 border-slate-800 opacity-75"
-                  }`}
+                  className="bg-slate-900/85 p-5 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
                 >
-                  <div className="space-y-1.5 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-950 text-rose-300 border border-rose-500/30">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-rose-400 px-2 py-0.5 rounded bg-rose-950 border border-rose-500/30">
                         {report.reason}
                       </span>
-                      <span className="text-xs font-mono text-cyan-400 hover:underline inline-flex items-center gap-1">
-                        <Link href={report.post_url} target="_blank">
-                          {report.post_url}
-                        </Link>
-                        <ExternalLink className="w-3 h-3" />
-                      </span>
-                      <span className="text-[11px] text-slate-500 font-mono">
-                        {new Date(report.created_at).toLocaleString()}
+                      <span className="text-xs text-slate-500 font-mono">
+                        Target: {report.post_url}
                       </span>
                     </div>
 
-                    <p className="text-sm text-slate-200">
-                      <strong>Report Note:</strong> {report.details || "No additional context provided."}
-                    </p>
+                    {report.details && (
+                      <p className="text-xs text-slate-300">&quot;{report.details}&quot;</p>
+                    )}
 
-                    <div className="text-xs font-mono">
-                      Status:{" "}
+                    <div className="text-[11px] font-mono text-slate-500">
+                      Filed: {new Date(report.created_at).toLocaleString()} • Status:{" "}
                       <span
                         className={
                           report.status === "PENDING_REVIEW"
@@ -734,133 +830,261 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* TAB 3: ACADEMIC VAULT APPROVALS */}
+      {/* TAB 3: ACADEMIC VAULT APPROVALS & DELETIONS */}
       {activeTab === "resources" && (
         <div className="space-y-4 animate-fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {resources.map((res) => (
-              <div
-                key={res.id}
-                className="bg-slate-900/85 p-5 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-800 text-cyan-300 border border-cyan-500/30">
-                        {res.subjectCode}
+          {resources.length === 0 ? (
+            <div className="text-center py-16 bg-slate-900/60 rounded-3xl border border-slate-800 p-8 space-y-3">
+              <FileCode2 className="w-12 h-12 text-slate-600 mx-auto" />
+              <h3 className="text-lg font-bold text-white">Academic Vault is Empty</h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                No academic notes or question papers currently uploaded.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {resources.map((res) => (
+                <div
+                  key={res.id}
+                  className="bg-slate-900/85 p-5 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-800 text-cyan-300 border border-cyan-500/30">
+                          {res.subjectCode}
+                        </span>
+                        <span className="text-xs text-slate-400">{res.semester}</span>
+                      </div>
+
+                      <span className="text-xs font-semibold text-purple-300 font-mono">
+                        {res.format} ({res.fileSize})
                       </span>
-                      <span className="text-xs text-slate-400">{res.semester}</span>
                     </div>
 
-                    <span className="text-xs font-semibold text-purple-300 font-mono">
-                      {res.format} ({res.fileSize})
-                    </span>
+                    <h4 className="font-bold text-white text-sm mb-1">{res.title}</h4>
+                    <p className="text-xs text-slate-400 line-clamp-2">{res.description}</p>
                   </div>
 
-                  <h4 className="font-bold text-white text-sm mb-1">{res.title}</h4>
-                  <p className="text-xs text-slate-400 line-clamp-2">{res.description}</p>
-                </div>
+                  <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
+                    <div className="text-xs font-mono text-slate-400">
+                      📥 {res.downloads} downloads
+                    </div>
 
-                <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
-                  <div className="text-xs font-mono text-slate-400">
-                    📥 {res.downloads} downloads
-                  </div>
+                    <div className="flex items-center gap-2">
+                      {res.linkUrl && res.linkUrl !== "#" && (
+                        <a
+                          href={res.linkUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700"
+                          title="Download / Preview File"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
 
-                  <div className="flex items-center gap-2">
-                    {res.linkUrl && res.linkUrl !== "#" && (
-                      <a
-                        href={res.linkUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700"
-                        title="Download / Preview File"
+                      <button
+                        onClick={() => handleToggleVerifyResource(res.id, res.verified)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors ${
+                          res.verified
+                            ? "bg-emerald-950 text-emerald-300 border border-emerald-500/50"
+                            : "bg-slate-800 text-slate-400 hover:text-white border border-slate-700"
+                        }`}
                       >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                    )}
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>{res.verified ? "Verified ✓" : "Verify"}</span>
+                      </button>
 
-                    <button
-                      onClick={() => handleToggleVerifyResource(res.id, res.verified)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors ${
-                        res.verified
-                          ? "bg-emerald-950 text-emerald-300 border border-emerald-500/50"
-                          : "bg-slate-800 text-slate-400 hover:text-white border border-slate-700"
-                      }`}
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>{res.verified ? "Verified ✓" : "Verify"}</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleDeleteResource(res.id)}
-                      className="p-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-500/30 transition-colors"
-                      title="Remove Resource"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                      <button
+                        onClick={() => handleDeleteResource(res.id)}
+                        className="p-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-500/30 transition-colors"
+                        title="Permanently Delete Resource"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* TAB 4: OPPORTUNITIES MANAGER */}
+      {/* TAB 4: OPPORTUNITIES MANAGER & DELETIONS */}
       {activeTab === "opportunities" && (
         <div className="space-y-4 animate-fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {opportunities.map((opp) => (
-              <div
-                key={opp.id}
-                className="bg-slate-900/85 p-5 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/40">
-                      {opp.type}
+          {opportunities.length === 0 ? (
+            <div className="text-center py-16 bg-slate-900/60 rounded-3xl border border-slate-800 p-8 space-y-3">
+              <Sparkles className="w-12 h-12 text-slate-600 mx-auto" />
+              <h3 className="text-lg font-bold text-white">No Opportunities Listed</h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                No active hackathons or internship opportunities in the database.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {opportunities.map((opp) => (
+                <div
+                  key={opp.id}
+                  className={`p-5 rounded-2xl border space-y-4 flex flex-col justify-between transition-all ${
+                    opp.isFeatured
+                      ? "bg-amber-950/20 border-amber-500/40 shadow-lg"
+                      : "bg-slate-900/85 border-slate-800"
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/40">
+                        {opp.type}
+                      </span>
+                      <span className="text-xs font-mono text-slate-400">Due: {opp.deadline}</span>
+                    </div>
+                    <h4 className="font-bold text-white text-base mb-1">{opp.title}</h4>
+                    <span className="text-xs text-slate-400 font-medium">{opp.company} • {opp.location}</span>
+                    {opp.description && (
+                      <p className="text-xs text-slate-400 line-clamp-2 mt-2">{opp.description}</p>
+                    )}
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
+                    <span className="text-xs font-mono text-cyan-300 font-semibold">
+                      {opp.stipendOrPrize}
                     </span>
-                    <span className="text-xs font-mono text-slate-400">Due: {opp.deadline}</span>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleToggleFeatureOpportunity(opp.id, opp.isFeatured)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors ${
+                          opp.isFeatured
+                            ? "bg-amber-950 text-amber-300 border border-amber-500/50"
+                            : "bg-slate-800 text-slate-400 hover:text-white border border-slate-700"
+                        }`}
+                        title="Toggle Featured Spotlight"
+                      >
+                        <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                        <span>{opp.isFeatured ? "Featured ★" : "Feature"}</span>
+                      </button>
+
+                      {opp.applyUrl && opp.applyUrl !== "#" && (
+                        <a
+                          href={opp.applyUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700"
+                          title="Open Application Link"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
+
+                      <button
+                        onClick={() => handleDeleteOpportunity(opp.id)}
+                        className="p-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-500/30 transition-colors"
+                        title="Permanently Delete Opportunity"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <h4 className="font-bold text-white text-base mb-1">{opp.title}</h4>
-                  <span className="text-xs text-slate-400 font-medium">{opp.company} • {opp.location}</span>
                 </div>
-
-                <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
-                  <span className="text-xs font-mono text-cyan-300 font-semibold">
-                    {opp.stipendOrPrize}
-                  </span>
-
-                  <div className="flex items-center gap-2">
-                    <a
-                      href={opp.applyUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700"
-                      title="Open Application Link"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-
-                    <button
-                      onClick={() => {
-                        setOpportunities((prev) => prev.filter((o) => o.id !== opp.id));
-                        setToastMessage("Opportunity listing archived");
-                      }}
-                      className="p-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-500/30 transition-colors"
-                      title="Delete Listing"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* TAB 5: SYSTEM TELEMETRY */}
+      {/* TAB 5: CAMPUS EVENTS MANAGER & DELETIONS */}
+      {activeTab === "events" && (
+        <div className="space-y-4 animate-fade-in">
+          {events.length === 0 ? (
+            <div className="text-center py-16 bg-slate-900/60 rounded-3xl border border-slate-800 p-8 space-y-3">
+              <Calendar className="w-12 h-12 text-slate-600 mx-auto" />
+              <h3 className="text-lg font-bold text-white">No Campus Events Scheduled</h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                No upcoming workshops or tech talks registered in the database.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {events.map((evt) => (
+                <div
+                  key={evt.id}
+                  className="bg-slate-900/85 p-5 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/40">
+                        {evt.category}
+                      </span>
+                      <span className="text-xs font-mono text-cyan-300 font-semibold">
+                        {evt.isOnline ? "🌐 Virtual Stream" : `📍 ${evt.venue}`}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-white text-base">{evt.title}</h4>
+                      <div className="flex items-center gap-3 text-xs text-slate-400 font-mono mt-1">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5 text-purple-400" />
+                          {evt.date}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                          {evt.time}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex items-center gap-2.5 text-xs">
+                      <div className="w-7 h-7 rounded-lg bg-purple-900/50 border border-purple-500/30 text-purple-300 flex items-center justify-center font-bold">
+                        <User className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-white">{evt.speaker.name}</div>
+                        <div className="text-[11px] text-slate-400">
+                          {evt.speaker.role} • {evt.speaker.company}
+                        </div>
+                      </div>
+                    </div>
+
+                    {evt.description && (
+                      <p className="text-xs text-slate-400 line-clamp-2">{evt.description}</p>
+                    )}
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
+                    <span className="text-xs font-mono text-slate-400">
+                      👥 {evt.registeredCount} / {evt.maxCapacity} seats reserved
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href="/events"
+                        className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700"
+                        title="View on Events Page"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </Link>
+
+                      <button
+                        onClick={() => handleDeleteEvent(evt.id)}
+                        className="p-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-500/30 transition-colors"
+                        title="Permanently Delete Event"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 6: SYSTEM TELEMETRY */}
       {activeTab === "telemetry" && (
         <div className="bg-slate-900/85 rounded-3xl p-6 sm:p-8 border border-slate-800 space-y-6 animate-fade-in backdrop-blur-md">
           <div className="space-y-1">
@@ -893,7 +1117,9 @@ export default function AdminPage() {
           <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-400 space-y-2">
             <div className="text-cyan-300 font-semibold">{"// Live Audit Event Stream"}</div>
             <div className="text-slate-500">• [2026-08-09] Moderator session authenticated via access code</div>
-            <div className="text-slate-500">• [2026-08-09] Table sync: confessions ({confessions.length}), resources ({resources.length}), reports ({reports.length})</div>
+            <div className="text-slate-500">
+              • [2026-08-09] Table sync: confessions ({confessions.length}), resources ({resources.length}), opportunities ({opportunities.length}), events ({events.length}), reports ({reports.length})
+            </div>
             <div className="text-slate-500">• [2026-08-09] Anti-Doxxing filter checked: 0 phone leaks detected</div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { supabase, isSupabaseConfigured, getServiceSupabase } from "@/lib/supabase";
 
 export async function DELETE(
@@ -6,27 +6,27 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const resourceId = params.id;
+    const eventId = params.id;
 
     if (!isSupabaseConfigured()) {
-      return NextResponse.json({ success: true, id: resourceId, source: "mock" });
+      return NextResponse.json({ success: true, id: eventId, source: "mock" });
     }
 
     const client = getServiceSupabase() || supabase;
     if (!client) {
-      return NextResponse.json({ success: true, id: resourceId, source: "mock" });
+      return NextResponse.json({ success: true, id: eventId, source: "mock" });
     }
 
     const { error } = await client
-      .from("resources")
+      .from("events")
       .delete()
-      .eq("id", resourceId);
+      .eq("id", eventId);
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, message: "Resource removed", source: "supabase" });
+    return NextResponse.json({ success: true, message: "Event removed from schedule", source: "supabase" });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to delete resource";
+    const message = error instanceof Error ? error.message : "Failed to delete event";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -36,19 +36,18 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const resourceId = params.id;
+    const eventId = params.id;
     const body = await request.json();
-    const { verified } = body;
 
     const client = getServiceSupabase() || supabase;
     if (!client) {
-      return NextResponse.json({ success: true, id: resourceId, verified, source: "mock" });
+      return NextResponse.json({ success: true, id: eventId, source: "mock" });
     }
 
     const { data, error } = await client
-      .from("resources")
-      .update({ verified: Boolean(verified) })
-      .eq("id", resourceId)
+      .from("events")
+      .update(body)
+      .eq("id", eventId)
       .select()
       .single();
 
@@ -56,7 +55,7 @@ export async function PATCH(
 
     return NextResponse.json({ success: true, data, source: "supabase" });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to update resource";
+    const message = error instanceof Error ? error.message : "Failed to update event";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

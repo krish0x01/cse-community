@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Calendar as CalendarIcon,
   Search,
   PlusCircle,
   CheckCircle,
+  RefreshCw,
 } from "lucide-react";
 import { MOCK_EVENTS } from "@/lib/mock-data";
 import { EventItem } from "@/lib/types";
@@ -15,9 +16,77 @@ import EventCard from "@/components/EventCard";
 const EVENT_CATEGORIES = ["All Events", "Tech Talk", "Workshop", "Meetup"];
 
 export default function EventsPage() {
-  const [events] = useState<EventItem[]>(MOCK_EVENTS);
+  const [events, setEvents] = useState<EventItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All Events");
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  const fetchEvents = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/events");
+      const json = await res.json();
+      if (json.data && Array.isArray(json.data)) {
+        interface RawEvent {
+          id: string;
+          title: string;
+          category: string;
+          date: string;
+          time: string;
+          venue: string;
+          is_online?: boolean;
+          isOnline?: boolean;
+          speaker_name?: string;
+          speaker_role?: string;
+          speaker_company?: string;
+          speaker?: {
+            name: string;
+            role: string;
+            company: string;
+            avatar?: string;
+          };
+          registered_count?: number;
+          registeredCount?: number;
+          max_capacity?: number;
+          maxCapacity?: number;
+          tags?: string[];
+          description?: string;
+        }
+
+        const normalized: EventItem[] = (json.data as RawEvent[]).map((e) => ({
+          id: e.id,
+          title: e.title,
+          category: e.category as "Tech Talk" | "Workshop" | "Meetup",
+          date: e.date,
+          time: e.time,
+          venue: e.venue,
+          isOnline: e.is_online ?? e.isOnline ?? false,
+          speaker: e.speaker || {
+            name: e.speaker_name || "Campus Speaker",
+            role: e.speaker_role || "Tech Lead",
+            company: e.speaker_company || "CSE Community",
+          },
+          registeredCount: e.registered_count ?? e.registeredCount ?? 0,
+          maxCapacity: e.max_capacity ?? e.maxCapacity ?? 100,
+          tags: e.tags || [],
+          description: e.description || "",
+        }));
+        setEvents(normalized);
+      } else if (json.source === "mock") {
+        setEvents(MOCK_EVENTS);
+      } else {
+        setEvents([]);
+      }
+    } catch {
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   const filteredEvents = useMemo(() => {
     return events.filter((evt) => {
