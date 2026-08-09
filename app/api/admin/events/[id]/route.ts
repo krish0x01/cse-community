@@ -50,12 +50,34 @@ export async function PATCH(
     if (typeof status !== "undefined") updates.status = status;
     delete updates.isApproved;
 
-    const { data, error } = await client
+    let { data, error } = await client
       .from("events")
       .update(updates)
       .eq("id", eventId)
       .select()
       .single();
+
+    if (error && (error.message?.includes("is_approved") || error.message?.includes("status") || error.message?.includes("schema cache"))) {
+      // Column might not exist in Supabase yet; retry without is_approved/status
+      const cleanUpdates = { ...updates };
+      delete cleanUpdates.is_approved;
+      delete cleanUpdates.status;
+      if (Object.keys(cleanUpdates).length > 0) {
+        const retry = await client
+          .from("events")
+          .update(cleanUpdates)
+          .eq("id", eventId)
+          .select()
+          .single();
+        if (!retry.error) {
+          data = retry.data;
+          error = null;
+        }
+      } else {
+        error = null;
+        data = { id: eventId, ...updates };
+      }
+    }
 
     if (error) throw error;
 

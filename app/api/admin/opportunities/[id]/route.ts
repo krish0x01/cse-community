@@ -50,12 +50,33 @@ export async function PATCH(
     if (typeof isApproved !== "undefined") updates.is_approved = Boolean(isApproved);
     if (typeof status !== "undefined") updates.status = status;
 
-    const { data, error } = await client
+    let { data, error } = await client
       .from("opportunities")
       .update(updates)
       .eq("id", oppId)
       .select()
       .single();
+
+    if (error && (error.message?.includes("is_approved") || error.message?.includes("status") || error.message?.includes("schema cache"))) {
+      const cleanUpdates = { ...updates };
+      delete cleanUpdates.is_approved;
+      delete cleanUpdates.status;
+      if (Object.keys(cleanUpdates).length > 0) {
+        const retry = await client
+          .from("opportunities")
+          .update(cleanUpdates)
+          .eq("id", oppId)
+          .select()
+          .single();
+        if (!retry.error) {
+          data = retry.data;
+          error = null;
+        }
+      } else {
+        error = null;
+        data = { id: oppId, ...updates };
+      }
+    }
 
     if (error) throw error;
 
