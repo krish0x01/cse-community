@@ -53,6 +53,8 @@ export interface Opportunity {
   eligibility: string;
   applyUrl: string;
   isFeatured?: boolean;
+  status?: "PENDING" | "APPROVED" | "REJECTED";
+  isApproved?: boolean;
 }
 
 export interface EventItem {
@@ -74,6 +76,8 @@ export interface EventItem {
   registeredCount: number;
   description: string;
   tags: string[];
+  status?: "PENDING" | "APPROVED" | "REJECTED";
+  isApproved?: boolean;
 }
 
 export interface RuleItem {

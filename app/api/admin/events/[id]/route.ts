@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { supabase, isSupabaseConfigured, getServiceSupabase } from "@/lib/supabase";
 
 export async function DELETE(
@@ -38,15 +38,21 @@ export async function PATCH(
   try {
     const eventId = params.id;
     const body = await request.json();
+    const { isApproved, status } = body;
 
     const client = getServiceSupabase() || supabase;
     if (!client) {
-      return NextResponse.json({ success: true, id: eventId, source: "mock" });
+      return NextResponse.json({ success: true, id: eventId, isApproved, status, source: "mock" });
     }
+
+    const updates: Record<string, unknown> = { ...body };
+    if (typeof isApproved !== "undefined") updates.is_approved = Boolean(isApproved);
+    if (typeof status !== "undefined") updates.status = status;
+    delete updates.isApproved;
 
     const { data, error } = await client
       .from("events")
-      .update(body)
+      .update(updates)
       .eq("id", eventId)
       .select()
       .single();

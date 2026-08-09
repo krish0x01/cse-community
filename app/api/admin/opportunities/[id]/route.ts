@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { supabase, isSupabaseConfigured, getServiceSupabase } from "@/lib/supabase";
 
 export async function DELETE(
@@ -38,16 +38,21 @@ export async function PATCH(
   try {
     const oppId = params.id;
     const body = await request.json();
-    const { isFeatured } = body;
+    const { isFeatured, isApproved, status } = body;
 
     const client = getServiceSupabase() || supabase;
     if (!client) {
-      return NextResponse.json({ success: true, id: oppId, isFeatured, source: "mock" });
+      return NextResponse.json({ success: true, id: oppId, isFeatured, isApproved, status, source: "mock" });
     }
+
+    const updates: Record<string, unknown> = {};
+    if (typeof isFeatured !== "undefined") updates.is_featured = Boolean(isFeatured);
+    if (typeof isApproved !== "undefined") updates.is_approved = Boolean(isApproved);
+    if (typeof status !== "undefined") updates.status = status;
 
     const { data, error } = await client
       .from("opportunities")
-      .update({ is_featured: Boolean(isFeatured) })
+      .update(updates)
       .eq("id", oppId)
       .select()
       .single();

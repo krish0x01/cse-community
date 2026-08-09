@@ -66,6 +66,8 @@ CREATE TABLE IF NOT EXISTS public.opportunities (
   eligibility TEXT NOT NULL,
   apply_url TEXT NOT NULL,
   is_featured BOOLEAN DEFAULT false,
+  status TEXT DEFAULT 'PENDING',
+  is_approved BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -87,6 +89,8 @@ CREATE TABLE IF NOT EXISTS public.events (
   registered_count INTEGER DEFAULT 0,
   description TEXT NOT NULL,
   tags TEXT[] DEFAULT '{}',
+  status TEXT DEFAULT 'PENDING',
+  is_approved BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

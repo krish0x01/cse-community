@@ -199,12 +199,20 @@ function SubmitFormContent() {
             <h2 className="text-2xl font-bold text-white">
               {activeType === "confession"
                 ? "Confession Sent for Council Authorization! 🛡️"
-                : "Submission Received Successfully!"}
+                : activeType === "opportunity"
+                ? "Opportunity Listing Sent for Council Authorization! 🛡️"
+                : activeType === "event"
+                ? "Campus Event Sent for Council Authorization! 🛡️"
+                : "Resource Uploaded Successfully! 📚"}
             </h2>
             <p className="text-sm text-slate-300 max-w-md mx-auto">
               {activeType === "confession"
                 ? "Your confession was anonymized and placed in the Council Moderation Queue. It will be authorized by an admin and published to the live feed shortly."
-                : `Your ${activeType} has been processed and is now available in the community ecosystem.`}
+                : activeType === "opportunity"
+                ? "Your opportunity listing has been placed in the Council Verification Queue. Once approved by an admin, it will go live on the Opportunities Radar."
+                : activeType === "event"
+                ? "Your campus meetup/workshop has been placed in the Council Moderation Queue. Once approved by an admin, it will be published to the official campus events schedule."
+                : "Your study resource is now available in the Academic Vault for fellow CSE students to download."}
             </p>
           </div>
 

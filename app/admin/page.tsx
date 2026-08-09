@@ -48,6 +48,8 @@ export default function AdminPage() {
     "reports" | "confessions" | "resources" | "opportunities" | "events" | "telemetry"
   >("confessions");
   const [confessionFilter, setConfessionFilter] = useState<"pending" | "approved" | "all">("pending");
+  const [oppFilter, setOppFilter] = useState<"pending" | "approved" | "all">("pending");
+  const [eventFilter, setEventFilter] = useState<"pending" | "approved" | "all">("pending");
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [confessions, setConfessions] = useState<Confession[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
@@ -93,8 +95,8 @@ export default function AdminPage() {
         setResources([]);
       }
 
-      // 4. Fetch Opportunities
-      const resOpp = await fetch("/api/opportunities");
+      // 4. Fetch Opportunities (including pending)
+      const resOpp = await fetch("/api/opportunities?all=true");
       const dataOpp = await resOpp.json();
       if (dataOpp.data && Array.isArray(dataOpp.data)) {
         setOpportunities(dataOpp.data);
@@ -104,8 +106,8 @@ export default function AdminPage() {
         setOpportunities([]);
       }
 
-      // 5. Fetch Events
-      const resEvt = await fetch("/api/events");
+      // 5. Fetch Events (including pending)
+      const resEvt = await fetch("/api/events?all=true");
       const dataEvt = await resEvt.json();
       if (dataEvt.data && Array.isArray(dataEvt.data)) {
         interface RawEvent {
@@ -314,6 +316,42 @@ export default function AdminPage() {
     }
   };
 
+  // Action: Authorize Opportunity
+  const handleAuthorizeOpportunity = async (oppId: string) => {
+    setOpportunities((prev) =>
+      prev.map((o) => (o.id === oppId ? { ...o, isApproved: true, status: "APPROVED" } : o))
+    );
+    setToastMessage("Opportunity authorized and published live ✓");
+
+    try {
+      await fetch(`/api/admin/opportunities/${oppId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isApproved: true, status: "APPROVED" }),
+      });
+    } catch {
+      // Optimistic update
+    }
+  };
+
+  // Action: Revoke Opportunity
+  const handleRevokeOpportunity = async (oppId: string) => {
+    setOpportunities((prev) =>
+      prev.map((o) => (o.id === oppId ? { ...o, isApproved: false, status: "PENDING" } : o))
+    );
+    setToastMessage("Opportunity moved back to Pending Review");
+
+    try {
+      await fetch(`/api/admin/opportunities/${oppId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isApproved: false, status: "PENDING" }),
+      });
+    } catch {
+      // Optimistic update
+    }
+  };
+
   // Action: Delete Opportunity
   const handleDeleteOpportunity = async (oppId: string) => {
     if (!confirm("Are you sure you want to permanently delete this opportunity listing?")) return;
@@ -341,6 +379,42 @@ export default function AdminPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isFeatured: nextState }),
+      });
+    } catch {
+      // Optimistic update
+    }
+  };
+
+  // Action: Authorize Event
+  const handleAuthorizeEvent = async (eventId: string) => {
+    setEvents((prev) =>
+      prev.map((e) => (e.id === eventId ? { ...e, isApproved: true, status: "APPROVED" } : e))
+    );
+    setToastMessage("Campus event authorized and added to live schedule ✓");
+
+    try {
+      await fetch(`/api/admin/events/${eventId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isApproved: true, status: "APPROVED" }),
+      });
+    } catch {
+      // Optimistic update
+    }
+  };
+
+  // Action: Revoke Event
+  const handleRevokeEvent = async (eventId: string) => {
+    setEvents((prev) =>
+      prev.map((e) => (e.id === eventId ? { ...e, isApproved: false, status: "PENDING" } : e))
+    );
+    setToastMessage("Campus event moved back to Pending Review");
+
+    try {
+      await fetch(`/api/admin/events/${eventId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isApproved: false, status: "PENDING" }),
       });
     } catch {
       // Optimistic update
@@ -414,10 +488,30 @@ export default function AdminPage() {
   const pendingConfessionsCount = confessions.filter((c) => c.isApproved === false || c.status === "PENDING").length;
   const approvedConfessionsCount = confessions.filter((c) => c.isApproved === true || c.status === "APPROVED").length;
 
+  const pendingOppsCount = opportunities.filter((o) => o.isApproved === false || o.status === "PENDING").length;
+  const approvedOppsCount = opportunities.filter((o) => o.isApproved === true || o.status === "APPROVED").length;
+
+  const pendingEventsCount = events.filter((e) => e.isApproved === false || e.status === "PENDING").length;
+  const approvedEventsCount = events.filter((e) => e.isApproved === true || e.status === "APPROVED").length;
+
   const filteredConfessions = confessions.filter((c) => {
     const isPending = c.isApproved === false || c.status === "PENDING";
     if (confessionFilter === "pending") return isPending;
     if (confessionFilter === "approved") return !isPending;
+    return true;
+  });
+
+  const filteredOpportunities = opportunities.filter((o) => {
+    const isPending = o.isApproved === false || o.status === "PENDING";
+    if (oppFilter === "pending") return isPending;
+    if (oppFilter === "approved") return !isPending;
+    return true;
+  });
+
+  const filteredEvents = events.filter((e) => {
+    const isPending = e.isApproved === false || e.status === "PENDING";
+    if (eventFilter === "pending") return isPending;
+    if (eventFilter === "approved") return !isPending;
     return true;
   });
 
@@ -571,7 +665,7 @@ export default function AdminPage() {
           }`}
         >
           <Sparkles className="w-4 h-4 text-amber-400" />
-          <span>Opportunities ({opportunities.length})</span>
+          <span>Opportunities {pendingOppsCount > 0 ? `(${pendingOppsCount} pending)` : `(${opportunities.length})`}</span>
         </button>
 
         <button
@@ -583,7 +677,7 @@ export default function AdminPage() {
           }`}
         >
           <Calendar className="w-4 h-4 text-purple-400" />
-          <span>Campus Events ({events.length})</span>
+          <span>Campus Events {pendingEventsCount > 0 ? `(${pendingEventsCount} pending)` : `(${events.length})`}</span>
         </button>
 
         <button
@@ -946,173 +1040,347 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* TAB 4: OPPORTUNITIES MANAGER & DELETIONS */}
+      {/* TAB 4: OPPORTUNITIES MANAGER & AUTHORIZATION */}
       {activeTab === "opportunities" && (
-        <div className="space-y-4 animate-fade-in">
-          {opportunities.length === 0 ? (
+        <div className="space-y-6 animate-fade-in">
+          {/* Sub-tabs filter */}
+          <div className="flex items-center gap-2 bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800 w-fit">
+            <button
+              onClick={() => setOppFilter("pending")}
+              className={`px-4 py-2 rounded-xl text-xs font-mono font-semibold transition-all ${
+                oppFilter === "pending"
+                  ? "bg-amber-950/80 text-amber-300 border border-amber-500/50 shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              ⏳ Pending Authorization ({pendingOppsCount})
+            </button>
+            <button
+              onClick={() => setOppFilter("approved")}
+              className={`px-4 py-2 rounded-xl text-xs font-mono font-semibold transition-all ${
+                oppFilter === "approved"
+                  ? "bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              ✅ Live / Published ({approvedOppsCount})
+            </button>
+            <button
+              onClick={() => setOppFilter("all")}
+              className={`px-4 py-2 rounded-xl text-xs font-mono font-semibold transition-all ${
+                oppFilter === "all"
+                  ? "bg-slate-800 text-white border border-slate-700"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              All ({opportunities.length})
+            </button>
+          </div>
+
+          {filteredOpportunities.length === 0 ? (
             <div className="text-center py-16 bg-slate-900/60 rounded-3xl border border-slate-800 p-8 space-y-3">
-              <Sparkles className="w-12 h-12 text-slate-600 mx-auto" />
-              <h3 className="text-lg font-bold text-white">No Opportunities Listed</h3>
+              <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
+              <h3 className="text-lg font-bold text-white">
+                {oppFilter === "pending" ? "Queue Clean! No Opportunities Pending Authorization" : "No Opportunities Found"}
+              </h3>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                No active hackathons or internship opportunities in the database.
+                {oppFilter === "pending"
+                  ? "All student and sponsor submitted opportunities have been reviewed."
+                  : "No opportunities currently match this filter criteria."}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {opportunities.map((opp) => (
-                <div
-                  key={opp.id}
-                  className={`p-5 rounded-2xl border space-y-4 flex flex-col justify-between transition-all ${
-                    opp.isFeatured
-                      ? "bg-amber-950/20 border-amber-500/40 shadow-lg"
-                      : "bg-slate-900/85 border-slate-800"
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/40">
-                        {opp.type}
-                      </span>
-                      <span className="text-xs font-mono text-slate-400">Due: {opp.deadline}</span>
-                    </div>
-                    <h4 className="font-bold text-white text-base mb-1">{opp.title}</h4>
-                    <span className="text-xs text-slate-400 font-medium">{opp.company} • {opp.location}</span>
-                    {opp.description && (
-                      <p className="text-xs text-slate-400 line-clamp-2 mt-2">{opp.description}</p>
-                    )}
-                  </div>
+              {filteredOpportunities.map((opp) => {
+                const isPending = opp.isApproved === false || opp.status === "PENDING";
 
-                  <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
-                    <span className="text-xs font-mono text-cyan-300 font-semibold">
-                      {opp.stipendOrPrize}
-                    </span>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleToggleFeatureOpportunity(opp.id, opp.isFeatured)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors ${
-                          opp.isFeatured
-                            ? "bg-amber-950 text-amber-300 border border-amber-500/50"
-                            : "bg-slate-800 text-slate-400 hover:text-white border border-slate-700"
-                        }`}
-                        title="Toggle Featured Spotlight"
-                      >
-                        <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                        <span>{opp.isFeatured ? "Featured ★" : "Feature"}</span>
-                      </button>
-
-                      {opp.applyUrl && opp.applyUrl !== "#" && (
-                        <a
-                          href={opp.applyUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700"
-                          title="Open Application Link"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
+                return (
+                  <div
+                    key={opp.id}
+                    className={`p-5 rounded-2xl border space-y-4 flex flex-col justify-between transition-all ${
+                      isPending
+                        ? "bg-slate-900/90 border-amber-500/50 shadow-amber-950/20"
+                        : opp.isFeatured
+                        ? "bg-amber-950/20 border-amber-500/40 shadow-lg"
+                        : "bg-slate-900/85 border-slate-800"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/40">
+                            {opp.type}
+                          </span>
+                          {isPending ? (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/40">
+                              PENDING AUTHORIZATION
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40">
+                              LIVE ON RADAR
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs font-mono text-slate-400">Due: {opp.deadline}</span>
+                      </div>
+                      <h4 className="font-bold text-white text-base mb-1">{opp.title}</h4>
+                      <span className="text-xs text-slate-400 font-medium">{opp.company} • {opp.location}</span>
+                      {opp.description && (
+                        <p className="text-xs text-slate-400 line-clamp-2 mt-2">{opp.description}</p>
                       )}
+                    </div>
 
-                      <button
-                        onClick={() => handleDeleteOpportunity(opp.id)}
-                        className="p-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-500/30 transition-colors"
-                        title="Permanently Delete Opportunity"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    <div className="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-mono text-cyan-300 font-semibold">
+                        {opp.stipendOrPrize}
+                      </span>
+
+                      <div className="flex items-center gap-2">
+                        {isPending ? (
+                          <>
+                            <button
+                              onClick={() => handleAuthorizeOpportunity(opp.id)}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Authorize & Publish Live</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteOpportunity(opp.id)}
+                              className="px-2.5 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/40 text-xs font-semibold flex items-center gap-1 transition-colors"
+                              title="Reject & Delete Opportunity"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                              <span>Reject</span>
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleRevokeOpportunity(opp.id)}
+                              className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold flex items-center gap-1 transition-colors"
+                              title="Revoke and send back to Pending"
+                            >
+                              <XCircle className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Revoke</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleToggleFeatureOpportunity(opp.id, opp.isFeatured)}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors ${
+                                opp.isFeatured
+                                  ? "bg-amber-950 text-amber-300 border border-amber-500/50"
+                                  : "bg-slate-800 text-slate-400 hover:text-white border border-slate-700"
+                              }`}
+                              title="Toggle Featured Spotlight"
+                            >
+                              <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                              <span>{opp.isFeatured ? "Featured ★" : "Feature"}</span>
+                            </button>
+                          </>
+                        )}
+
+                        {opp.applyUrl && opp.applyUrl !== "#" && (
+                          <a
+                            href={opp.applyUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700"
+                            title="Open Application Link"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        )}
+
+                        <button
+                          onClick={() => handleDeleteOpportunity(opp.id)}
+                          className="p-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-500/30 transition-colors"
+                          title="Permanently Delete Opportunity"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       )}
 
-      {/* TAB 5: CAMPUS EVENTS MANAGER & DELETIONS */}
+      {/* TAB 5: CAMPUS EVENTS MANAGER & AUTHORIZATION */}
       {activeTab === "events" && (
-        <div className="space-y-4 animate-fade-in">
-          {events.length === 0 ? (
+        <div className="space-y-6 animate-fade-in">
+          {/* Sub-tabs filter */}
+          <div className="flex items-center gap-2 bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800 w-fit">
+            <button
+              onClick={() => setEventFilter("pending")}
+              className={`px-4 py-2 rounded-xl text-xs font-mono font-semibold transition-all ${
+                eventFilter === "pending"
+                  ? "bg-purple-950/80 text-purple-300 border border-purple-500/50 shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              ⏳ Pending Authorization ({pendingEventsCount})
+            </button>
+            <button
+              onClick={() => setEventFilter("approved")}
+              className={`px-4 py-2 rounded-xl text-xs font-mono font-semibold transition-all ${
+                eventFilter === "approved"
+                  ? "bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              ✅ Live / Scheduled ({approvedEventsCount})
+            </button>
+            <button
+              onClick={() => setEventFilter("all")}
+              className={`px-4 py-2 rounded-xl text-xs font-mono font-semibold transition-all ${
+                eventFilter === "all"
+                  ? "bg-slate-800 text-white border border-slate-700"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              All ({events.length})
+            </button>
+          </div>
+
+          {filteredEvents.length === 0 ? (
             <div className="text-center py-16 bg-slate-900/60 rounded-3xl border border-slate-800 p-8 space-y-3">
-              <Calendar className="w-12 h-12 text-slate-600 mx-auto" />
-              <h3 className="text-lg font-bold text-white">No Campus Events Scheduled</h3>
+              <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
+              <h3 className="text-lg font-bold text-white">
+                {eventFilter === "pending" ? "Queue Clean! No Campus Events Pending Authorization" : "No Events Found"}
+              </h3>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                No upcoming workshops or tech talks registered in the database.
+                {eventFilter === "pending"
+                  ? "All student and organizer proposed meetups and workshops have been reviewed."
+                  : "No events match this filter criteria."}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {events.map((evt) => (
-                <div
-                  key={evt.id}
-                  className="bg-slate-900/85 p-5 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/40">
-                        {evt.category}
-                      </span>
-                      <span className="text-xs font-mono text-cyan-300 font-semibold">
-                        {evt.isOnline ? "🌐 Virtual Stream" : `📍 ${evt.venue}`}
-                      </span>
-                    </div>
+              {filteredEvents.map((evt) => {
+                const isPending = evt.isApproved === false || evt.status === "PENDING";
 
-                    <div>
-                      <h4 className="font-bold text-white text-base">{evt.title}</h4>
-                      <div className="flex items-center gap-3 text-xs text-slate-400 font-mono mt-1">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5 text-purple-400" />
-                          {evt.date}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-cyan-400" />
-                          {evt.time}
+                return (
+                  <div
+                    key={evt.id}
+                    className={`p-5 rounded-2xl border space-y-4 flex flex-col justify-between ${
+                      isPending
+                        ? "bg-slate-900/90 border-purple-500/50 shadow-purple-950/20"
+                        : "bg-slate-900/85 border-slate-800"
+                    }`}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/40">
+                            {evt.category}
+                          </span>
+                          {isPending ? (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/40">
+                              PENDING AUTHORIZATION
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40">
+                              LIVE ON SCHEDULE
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs font-mono text-cyan-300 font-semibold">
+                          {evt.isOnline ? "🌐 Virtual Stream" : `📍 ${evt.venue}`}
                         </span>
                       </div>
-                    </div>
 
-                    <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex items-center gap-2.5 text-xs">
-                      <div className="w-7 h-7 rounded-lg bg-purple-900/50 border border-purple-500/30 text-purple-300 flex items-center justify-center font-bold">
-                        <User className="w-3.5 h-3.5" />
-                      </div>
                       <div>
-                        <div className="font-bold text-white">{evt.speaker.name}</div>
-                        <div className="text-[11px] text-slate-400">
-                          {evt.speaker.role} • {evt.speaker.company}
+                        <h4 className="font-bold text-white text-base">{evt.title}</h4>
+                        <div className="flex items-center gap-3 text-xs text-slate-400 font-mono mt-1">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5 text-purple-400" />
+                            {evt.date}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                            {evt.time}
+                          </span>
                         </div>
                       </div>
+
+                      <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex items-center gap-2.5 text-xs">
+                        <div className="w-7 h-7 rounded-lg bg-purple-900/50 border border-purple-500/30 text-purple-300 flex items-center justify-center font-bold">
+                          <User className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-white">{evt.speaker.name}</div>
+                          <div className="text-[11px] text-slate-400">
+                            {evt.speaker.role} • {evt.speaker.company}
+                          </div>
+                        </div>
+                      </div>
+
+                      {evt.description && (
+                        <p className="text-xs text-slate-400 line-clamp-2">{evt.description}</p>
+                      )}
                     </div>
 
-                    {evt.description && (
-                      <p className="text-xs text-slate-400 line-clamp-2">{evt.description}</p>
-                    )}
-                  </div>
+                    <div className="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-mono text-slate-400">
+                        👥 {evt.registeredCount} / {evt.totalSeats} seats reserved
+                      </span>
 
-                  <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
-                    <span className="text-xs font-mono text-slate-400">
-                      👥 {evt.registeredCount} / {evt.totalSeats} seats reserved
-                    </span>
+                      <div className="flex items-center gap-2">
+                        {isPending ? (
+                          <>
+                            <button
+                              onClick={() => handleAuthorizeEvent(evt.id)}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Authorize & Publish Schedule</span>
+                            </button>
 
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href="/events"
-                        className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700"
-                        title="View on Events Page"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </Link>
+                            <button
+                              onClick={() => handleDeleteEvent(evt.id)}
+                              className="px-2.5 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/40 text-xs font-semibold flex items-center gap-1 transition-colors"
+                              title="Reject & Delete Event"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                              <span>Reject</span>
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleRevokeEvent(evt.id)}
+                            className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold flex items-center gap-1 transition-colors"
+                            title="Revoke and send back to Pending"
+                          >
+                            <XCircle className="w-3.5 h-3.5 text-purple-400" />
+                            <span>Revoke</span>
+                          </button>
+                        )}
 
-                      <button
-                        onClick={() => handleDeleteEvent(evt.id)}
-                        className="p-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-500/30 transition-colors"
-                        title="Permanently Delete Event"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        <Link
+                          href="/events"
+                          className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700"
+                          title="View on Events Page"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Link>
+
+                        <button
+                          onClick={() => handleDeleteEvent(evt.id)}
+                          className="p-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900 text-rose-400 border border-rose-500/30 transition-colors"
+                          title="Permanently Delete Event"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -310,6 +310,8 @@ export const MOCK_OPPORTUNITIES: Opportunity[] = [
     eligibility: "Open to all engineering undergrads & postgrads (Teams of 2-4)",
     applyUrl: "https://devfolio.co",
     isFeatured: true,
+    status: "APPROVED",
+    isApproved: true,
   },
   {
     id: "opp-2",
@@ -327,6 +329,8 @@ export const MOCK_OPPORTUNITIES: Opportunity[] = [
     eligibility: "Pre-final & Final year CSE/IT students with strong DSA & OS fundamentals.",
     applyUrl: "https://razorpay.com/careers",
     isFeatured: true,
+    status: "APPROVED",
+    isApproved: true,
   },
   {
     id: "opp-3",
@@ -344,6 +348,8 @@ export const MOCK_OPPORTUNITIES: Opportunity[] = [
     eligibility: "Any enrolled student with working knowledge of Git and one modern language (JS/TS/Python/Go/Rust).",
     applyUrl: "https://fellowship.mlh.io",
     isFeatured: false,
+    status: "APPROVED",
+    isApproved: true,
   },
   {
     id: "opp-4",
@@ -361,6 +367,26 @@ export const MOCK_OPPORTUNITIES: Opportunity[] = [
     eligibility: "CSE Sem 4+ with C/C++ familiarity. Limited to 60 seats.",
     applyUrl: "#",
     isFeatured: false,
+    status: "APPROVED",
+    isApproved: true,
+  },
+  {
+    id: "opp-pending-1",
+    title: "Fullstack Rust & Next.js Junior Developer Fellowship",
+    company: "Campus Tech Incubator",
+    type: "Internship",
+    location: "Remote",
+    locationDetail: "Hybrid / Remote",
+    stipendOrPrize: "₹35,000 / month",
+    deadline: "April 10, 2026",
+    daysRemaining: 30,
+    tags: ["Rust", "Next.js", "Fullstack"],
+    description: "Building fast web tools for student research teams with mentorship.",
+    eligibility: "CSE Sem 2 to Sem 8 students.",
+    applyUrl: "https://github.com",
+    isFeatured: false,
+    status: "PENDING",
+    isApproved: false,
   },
 ];
 
@@ -385,6 +411,8 @@ export const MOCK_EVENTS: EventItem[] = [
     description:
       "Learn how modern high-scale apps handle millions of concurrent connections, database caching with Redis, event-driven architectures, and how to ace LLD/HLD rounds.",
     tags: ["System Design", "Distributed Systems", "Tech Talk"],
+    status: "APPROVED",
+    isApproved: true,
   },
   {
     id: "evt-2",
@@ -406,6 +434,8 @@ export const MOCK_EVENTS: EventItem[] = [
     description:
       "Bring your laptops! We will clone active open source repositories, set up local dev environments, find beginner-friendly 'good first issues', and submit live pull requests.",
     tags: ["Git & GitHub", "GSoC", "Hands-on Workshop"],
+    status: "APPROVED",
+    isApproved: true,
   },
   {
     id: "evt-3",
@@ -427,6 +457,30 @@ export const MOCK_EVENTS: EventItem[] = [
     description:
       "Casual evening with fellow hackers: 2-minute project flash pitches, lighthearted coding roasts, teaming up for upcoming national hackathons, and complimentary pizzas & drinks.",
     tags: ["Networking", "Hackathon Teaming", "Pizza & Chill"],
+    status: "APPROVED",
+    isApproved: true,
+  },
+  {
+    id: "evt-pending-1",
+    title: "Peer-to-Peer Code Review & Resume Roast Session",
+    category: "Meetup",
+    date: "Sep 05, 2026",
+    month: "SEP",
+    day: "05",
+    time: "4:00 PM - 6:00 PM IST",
+    venue: "Lab 3, Department Building",
+    isOnline: false,
+    speaker: {
+      name: "Senior Mentors Batch '24",
+      role: "Student Leads",
+      company: "Campus Tech Council",
+    },
+    totalSeats: 50,
+    registeredCount: 12,
+    description: "Bring your resume and GitHub profile for live constructive peer feedback.",
+    tags: ["Resume Review", "Peer Mentorship", "Career Prep"],
+    status: "PENDING",
+    isApproved: false,
   },
 ];
 

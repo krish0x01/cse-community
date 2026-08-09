@@ -8,8 +8,26 @@ ALTER TABLE public.confessions
 ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'PENDING',
 ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT false;
 
--- 2. Update all existing confessions so they are marked as approved (live)
+-- 2. Add status and is_approved columns to opportunities table
+ALTER TABLE public.opportunities 
+ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'PENDING',
+ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT false;
+
+-- 3. Add status and is_approved columns to events table
+ALTER TABLE public.events 
+ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'PENDING',
+ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT false;
+
+-- 4. Mark all existing items as approved (live)
 UPDATE public.confessions 
+SET is_approved = true, status = 'APPROVED' 
+WHERE is_approved IS NULL OR status IS NULL;
+
+UPDATE public.opportunities 
+SET is_approved = true, status = 'APPROVED' 
+WHERE is_approved IS NULL OR status IS NULL;
+
+UPDATE public.events 
 SET is_approved = true, status = 'APPROVED' 
 WHERE is_approved IS NULL OR status IS NULL;
 
