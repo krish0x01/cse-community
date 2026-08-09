@@ -20,7 +20,7 @@ import {
   MOCK_EVENTS,
   COMMUNITY_STATS,
 } from "@/lib/mock-data";
-import { Confession, Resource, Opportunity } from "@/lib/types";
+import { Confession, Resource, Opportunity, EventItem } from "@/lib/types";
 import ConfessionCard from "@/components/ConfessionCard";
 import ResourceCard from "@/components/ResourceCard";
 import OpportunityCard from "@/components/OpportunityCard";
@@ -30,14 +30,16 @@ export default function HomePage() {
   const [confessions, setConfessions] = useState<Confession[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
 
   useEffect(() => {
     async function loadLiveData() {
       try {
-        const [resConf, resRes, resOpp] = await Promise.all([
+        const [resConf, resRes, resOpp, resEvt] = await Promise.all([
           fetch("/api/confessions").then((r) => r.json()).catch(() => null),
           fetch("/api/resources").then((r) => r.json()).catch(() => null),
           fetch("/api/opportunities").then((r) => r.json()).catch(() => null),
+          fetch("/api/events").then((r) => r.json()).catch(() => null),
         ]);
 
         if (resConf?.data && Array.isArray(resConf.data)) {
@@ -57,6 +59,66 @@ export default function HomePage() {
         } else if (resOpp?.source === "mock") {
           setOpportunities(MOCK_OPPORTUNITIES);
         }
+
+        if (resEvt?.data && Array.isArray(resEvt.data)) {
+          interface RawEvent {
+            id: string;
+            title: string;
+            category: string;
+            date: string;
+            time: string;
+            venue: string;
+            is_online?: boolean;
+            isOnline?: boolean;
+            speaker_name?: string;
+            speaker_role?: string;
+            speaker_company?: string;
+            speaker?: {
+              name: string;
+              role: string;
+              company: string;
+              avatar?: string;
+            };
+            registered_count?: number;
+            registeredCount?: number;
+            max_capacity?: number;
+            maxCapacity?: number;
+            tags?: string[];
+            description?: string;
+          }
+
+          const normalizedEvents: EventItem[] = (resEvt.data as RawEvent[]).map((e) => {
+            const d = new Date(e.date || Date.now());
+            const month = !isNaN(d.getTime())
+              ? d.toLocaleString("en-US", { month: "short" }).toUpperCase()
+              : "OCT";
+            const day = !isNaN(d.getTime()) ? String(d.getDate()).padStart(2, "0") : "24";
+
+            return {
+              id: e.id,
+              title: e.title,
+              category: (e.category as EventItem["category"]) || "Tech Talk",
+              date: e.date,
+              month,
+              day,
+              time: e.time,
+              venue: e.venue,
+              isOnline: e.is_online ?? e.isOnline ?? false,
+              speaker: e.speaker || {
+                name: e.speaker_name || "Campus Speaker",
+                role: e.speaker_role || "Tech Lead",
+                company: e.speaker_company || "CSE Community",
+              },
+              totalSeats: e.max_capacity ?? e.maxCapacity ?? 100,
+              registeredCount: e.registered_count ?? e.registeredCount ?? 0,
+              tags: e.tags || [],
+              description: e.description || "",
+            };
+          });
+          setEvents(normalizedEvents);
+        } else if (resEvt?.source === "mock") {
+          setEvents(MOCK_EVENTS);
+        }
       } catch {
         // Keep fallback
       }
@@ -69,7 +131,7 @@ export default function HomePage() {
     : confessions.slice(0, 3);
   const featuredOpportunities = opportunities.slice(0, 2);
   const topResources = resources.slice(0, 3);
-  const upcomingEvents = MOCK_EVENTS.slice(0, 2);
+  const upcomingEvents = events.slice(0, 2);
 
   return (
     <div className="space-y-20 sm:space-y-28 pb-12">
@@ -393,11 +455,19 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {upcomingEvents.map((event) => (
-            <EventCard key={event.id} event={event} />
-          ))}
-        </div>
+        {upcomingEvents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {upcomingEvents.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-slate-900/60 rounded-3xl border border-slate-800 p-6 space-y-2">
+            <Calendar className="w-8 h-8 text-slate-600 mx-auto" />
+            <p className="text-sm font-semibold text-white">No upcoming events scheduled right now.</p>
+            <p className="text-xs text-slate-400">Propose a tech talk or check back soon for updates!</p>
+          </div>
+        )}
       </section>
 
       {/* 8. CALL-TO-ACTION SECTION */}
