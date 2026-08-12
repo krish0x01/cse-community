@@ -9,7 +9,7 @@ import {
   CheckCircle,
   RefreshCw,
 } from "lucide-react";
-import { MOCK_EVENTS } from "@/lib/mock-data";
+
 import { EventItem } from "@/lib/types";
 import EventCard from "@/components/EventCard";
 
@@ -82,8 +82,6 @@ export default function EventsPage() {
           };
         });
         setEvents(normalized);
-      } else if (json.source === "mock") {
-        setEvents(MOCK_EVENTS);
       } else {
         setEvents([]);
       }

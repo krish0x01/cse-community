@@ -11,8 +11,55 @@ import {
   Users,
   EyeOff,
 } from "lucide-react";
-import { MOCK_RULES } from "@/lib/mock-data";
 import Toast from "@/components/Toast";
+
+const COMMUNITY_RULES = [
+  {
+    number: "01",
+    title: "Zero Tolerance for Doxxing & Personal Info",
+    tagline: "Absolute Anonymity Protection",
+    summary: "Never share real names, phone numbers, social handles, roll numbers, or personal identifying details of any student or faculty member.",
+    dos: ["Anonymous role descriptions", "Broad batch or course identifiers"],
+    donts: ["Phone numbers or emails", "Direct name drops or social links"],
+    consequence: "Immediate permanent content purge & IP blacklist escalation.",
+  },
+  {
+    number: "02",
+    title: "Respect & Anti-Harassment",
+    tagline: "Constructive Campus Dialogue",
+    summary: "Rants and opinions are welcome, but targeted bullying, hate speech, discrimination, or personal attacks are strictly forbidden.",
+    dos: ["Critiquing courses, policies, or general situations", "Expressing personal academic struggles"],
+    donts: ["Targeting specific individuals with malice", "Hate speech or discriminatory language"],
+    consequence: "Moderator flag review, content deletion & session suspension.",
+  },
+  {
+    number: "03",
+    title: "Academic Integrity & Fair Use",
+    tagline: "Collaborative Learning Standard",
+    summary: "Resource uploads must consist of notes, study guides, solved PYQs, or open practical code. Sharing live exam questions during active tests is prohibited.",
+    dos: ["Sharing study guides & handwritten notes", "Uploading previous years' exam papers"],
+    donts: ["Leaking live exam questions during active tests", "Malicious or infected files"],
+    consequence: "Immediate removal of compromised material & academic alert.",
+  },
+  {
+    number: "04",
+    title: "Zero Spam & Authentic Submissions",
+    tagline: "High Quality Information Only",
+    summary: "Do not post duplicate content, automated spam, commercial promotions, or misleading links.",
+    dos: ["Legitimate hackathons, tech talks & internships", "Verified academic drive links"],
+    donts: ["Affiliate links or commercial spam", "Duplicate submissions"],
+    consequence: "Automated spam filter rejection & poster rate limiting.",
+  },
+  {
+    number: "05",
+    title: "Community Moderation & Reporting",
+    tagline: "Self-Governing Student Body",
+    summary: "The platform relies on student reports. Violations are reviewed by the moderator council and offending content is promptly removed.",
+    dos: ["Reporting guideline violations responsibly", "Providing clear context when flagging"],
+    donts: ["Abusing the report feature with false flags", "Evading moderation actions"],
+    consequence: "Disregard of malicious reports & report abuse cooldown.",
+  },
+];
 
 export default function RulesPage() {
   const [reportUrl, setReportUrl] = useState("");
@@ -75,7 +122,7 @@ export default function RulesPage() {
         </div>
 
         <div className="space-y-6">
-          {MOCK_RULES.map((rule) => (
+          {COMMUNITY_RULES.map((rule) => (
             <article
               key={rule.number}
               className="bg-slate-900/80 rounded-3xl border border-slate-800 hover:border-cyan-500/30 shadow-card p-6 sm:p-8 space-y-6 relative overflow-hidden backdrop-blur-md"

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { MOCK_EVENTS } from "@/lib/mock-data";
+
 
 export async function GET(request: Request) {
   try {
@@ -10,18 +10,7 @@ export async function GET(request: Request) {
     const includeAll = searchParams.get("all") === "true" || searchParams.get("includePending") === "true";
 
     if (!isSupabaseConfigured() || !supabase) {
-      let data = [...MOCK_EVENTS];
-      if (!includeAll) {
-        data = data.filter((e) => e.isApproved === true || e.status === "APPROVED");
-      }
-      if (category && category !== "All Events") {
-        data = data.filter((e) => e.category === category);
-      }
-      if (search) {
-        const q = search.toLowerCase();
-        data = data.filter((e) => e.title.toLowerCase().includes(q) || e.speaker.name.toLowerCase().includes(q));
-      }
-      return NextResponse.json({ data, source: "mock", isConnected: false });
+      return NextResponse.json({ data: [], source: "supabase", isConnected: false });
     }
 
     let query = supabase.from("events").select("*");

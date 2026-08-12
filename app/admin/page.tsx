@@ -23,12 +23,7 @@ import {
 } from "lucide-react";
 import Toast from "@/components/Toast";
 import { Confession, Resource, Opportunity, EventItem } from "@/lib/types";
-import {
-  MOCK_CONFESSIONS,
-  MOCK_RESOURCES,
-  MOCK_OPPORTUNITIES,
-  MOCK_EVENTS,
-} from "@/lib/mock-data";
+
 
 interface ReportItem {
   id: string;
@@ -77,8 +72,6 @@ export default function AdminPage() {
       const dataConf = await resConf.json();
       if (dataConf.data && Array.isArray(dataConf.data)) {
         setConfessions(dataConf.data);
-      } else if (dataConf.source === "mock") {
-        setConfessions(MOCK_CONFESSIONS);
       } else {
         setConfessions([]);
       }
@@ -89,8 +82,6 @@ export default function AdminPage() {
       const dataRes = await resRes.json();
       if (dataRes.data && Array.isArray(dataRes.data)) {
         setResources(dataRes.data);
-      } else if (dataRes.source === "mock") {
-        setResources(MOCK_RESOURCES);
       } else {
         setResources([]);
       }
@@ -100,8 +91,6 @@ export default function AdminPage() {
       const dataOpp = await resOpp.json();
       if (dataOpp.data && Array.isArray(dataOpp.data)) {
         setOpportunities(dataOpp.data);
-      } else if (dataOpp.source === "mock") {
-        setOpportunities(MOCK_OPPORTUNITIES);
       } else {
         setOpportunities([]);
       }
@@ -179,8 +168,6 @@ export default function AdminPage() {
           };
         });
         setEvents(normalized);
-      } else if (dataEvt.source === "mock") {
-        setEvents(MOCK_EVENTS);
       } else {
         setEvents([]);
       }

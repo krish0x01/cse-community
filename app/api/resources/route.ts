@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { MOCK_RESOURCES } from "@/lib/mock-data";
+
 
 export async function GET(request: Request) {
   try {
@@ -10,23 +10,7 @@ export async function GET(request: Request) {
     const search = searchParams.get("search");
 
     if (!isSupabaseConfigured() || !supabase) {
-      let data = [...MOCK_RESOURCES];
-      if (category && category !== "All Resources") {
-        data = data.filter((r) => r.category === category);
-      }
-      if (semester && semester !== "All Semesters") {
-        data = data.filter((r) => r.semester.toLowerCase().includes(semester.toLowerCase()));
-      }
-      if (search) {
-        const q = search.toLowerCase();
-        data = data.filter(
-          (r) =>
-            r.title.toLowerCase().includes(q) ||
-            r.subjectCode.toLowerCase().includes(q) ||
-            r.subjectName.toLowerCase().includes(q)
-        );
-      }
-      return NextResponse.json({ data, source: "mock" });
+      return NextResponse.json({ data: [], source: "supabase", isConnected: false });
     }
 
     let query = supabase.from("resources").select("*");

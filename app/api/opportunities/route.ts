@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { MOCK_OPPORTUNITIES } from "@/lib/mock-data";
+
 
 export async function GET(request: Request) {
   try {
@@ -11,21 +11,7 @@ export async function GET(request: Request) {
     const includeAll = searchParams.get("all") === "true" || searchParams.get("includePending") === "true";
 
     if (!isSupabaseConfigured() || !supabase) {
-      let data = [...MOCK_OPPORTUNITIES];
-      if (!includeAll) {
-        data = data.filter((o) => o.isApproved === true || o.status === "APPROVED");
-      }
-      if (type && type !== "All Types") {
-        data = data.filter((o) => o.type === type);
-      }
-      if (location && location !== "All Locations") {
-        data = data.filter((o) => o.location === location);
-      }
-      if (search) {
-        const q = search.toLowerCase();
-        data = data.filter((o) => o.title.toLowerCase().includes(q) || o.company.toLowerCase().includes(q));
-      }
-      return NextResponse.json({ data, source: "mock", isConnected: false });
+      return NextResponse.json({ data: [], source: "supabase", isConnected: false });
     }
 
     let query = supabase.from("opportunities").select("*");

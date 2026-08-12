@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { MOCK_CONFESSIONS } from "@/lib/mock-data";
+
 
 export async function GET(request: Request) {
   try {
@@ -11,30 +11,7 @@ export async function GET(request: Request) {
     const includePending = searchParams.get("all") === "true" || searchParams.get("admin") === "true";
 
     if (!isSupabaseConfigured() || !supabase) {
-      let data = [...MOCK_CONFESSIONS];
-
-      if (!includePending) {
-        data = data.filter((c) => c.isApproved === true || (c.status !== "PENDING" && c.isApproved !== false));
-      }
-
-      if (category && category !== "All") {
-        data = data.filter((c) => c.category === category);
-      }
-      if (search) {
-        const query = search.toLowerCase();
-        data = data.filter(
-          (c) =>
-            c.content.toLowerCase().includes(query) ||
-            c.alias.toLowerCase().includes(query) ||
-            c.tags.some((t) => t.toLowerCase().includes(query))
-        );
-      }
-      if (sortBy === "trending") {
-        data.sort((a, b) => (b.isTrending ? 1 : 0) - (a.isTrending ? 1 : 0) || b.likes - a.likes);
-      } else if (sortBy === "liked") {
-        data.sort((a, b) => b.likes - a.likes);
-      }
-      return NextResponse.json({ data, source: "mock", isConnected: false });
+      return NextResponse.json({ data: [], source: "supabase", isConnected: false });
     }
 
     let query = supabase.from("confessions").select("*, comments(*)");

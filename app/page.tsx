@@ -13,13 +13,7 @@ import {
   CheckCircle2,
   ArrowUpRight,
 } from "lucide-react";
-import {
-  MOCK_CONFESSIONS,
-  MOCK_RESOURCES,
-  MOCK_OPPORTUNITIES,
-  MOCK_EVENTS,
-  COMMUNITY_STATS,
-} from "@/lib/mock-data";
+import { COMMUNITY_STATS } from "@/lib/mock-data";
 import { Confession, Resource, Opportunity, EventItem } from "@/lib/types";
 import ConfessionCard from "@/components/ConfessionCard";
 import ResourceCard from "@/components/ResourceCard";
@@ -44,20 +38,20 @@ export default function HomePage() {
 
         if (resConf?.data && Array.isArray(resConf.data)) {
           setConfessions(resConf.data);
-        } else if (resConf?.source === "mock") {
-          setConfessions(MOCK_CONFESSIONS.filter((c) => c.isApproved === true || c.status === "APPROVED"));
+        } else {
+          setConfessions([]);
         }
 
         if (resRes?.data && Array.isArray(resRes.data)) {
           setResources(resRes.data);
-        } else if (resRes?.source === "mock") {
-          setResources(MOCK_RESOURCES);
+        } else {
+          setResources([]);
         }
 
         if (resOpp?.data && Array.isArray(resOpp.data)) {
           setOpportunities(resOpp.data);
-        } else if (resOpp?.source === "mock") {
-          setOpportunities(MOCK_OPPORTUNITIES);
+        } else {
+          setOpportunities([]);
         }
 
         if (resEvt?.data && Array.isArray(resEvt.data)) {
@@ -116,11 +110,14 @@ export default function HomePage() {
             };
           });
           setEvents(normalizedEvents);
-        } else if (resEvt?.source === "mock") {
-          setEvents(MOCK_EVENTS);
+        } else {
+          setEvents([]);
         }
       } catch {
-        // Keep fallback
+        setConfessions([]);
+        setResources([]);
+        setOpportunities([]);
+        setEvents([]);
       }
     }
     loadLiveData();

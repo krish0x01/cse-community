@@ -13,7 +13,7 @@ import {
   RefreshCw,
   Zap,
 } from "lucide-react";
-import { MOCK_CONFESSIONS } from "@/lib/mock-data";
+
 import { Confession } from "@/lib/types";
 import ConfessionCard from "@/components/ConfessionCard";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
@@ -44,8 +44,6 @@ export default function ConfessionsPage() {
       const json = await res.json();
       if (json.data && Array.isArray(json.data)) {
         setConfessions(json.data);
-      } else if (json.source === "mock") {
-        setConfessions(MOCK_CONFESSIONS.filter((c) => c.isApproved === true || c.status === "APPROVED"));
       } else {
         setConfessions([]);
       }

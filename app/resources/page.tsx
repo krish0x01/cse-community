@@ -11,7 +11,7 @@ import {
   RefreshCw,
   Database,
 } from "lucide-react";
-import { MOCK_RESOURCES } from "@/lib/mock-data";
+
 import { Resource } from "@/lib/types";
 import ResourceCard from "@/components/ResourceCard";
 
@@ -87,8 +87,6 @@ export default function ResourcesPage() {
           description: r.description || "",
         }));
         setResources(normalized);
-      } else if (json.source === "mock") {
-        setResources(MOCK_RESOURCES);
       } else {
         setResources([]);
       }

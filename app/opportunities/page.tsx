@@ -9,7 +9,7 @@ import {
   RefreshCw,
   Database,
 } from "lucide-react";
-import { MOCK_OPPORTUNITIES } from "@/lib/mock-data";
+
 import { Opportunity } from "@/lib/types";
 import OpportunityCard from "@/components/OpportunityCard";
 
@@ -76,8 +76,6 @@ export default function OpportunitiesPage() {
           isFeatured: o.is_featured ?? o.isFeatured ?? false,
         }));
         setOpportunities(normalized);
-      } else if (json.source === "mock") {
-        setOpportunities(MOCK_OPPORTUNITIES);
       } else {
         setOpportunities([]);
       }
