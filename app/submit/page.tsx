@@ -1,7 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
-import { useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -34,9 +33,14 @@ const RANDOM_ALIASES = [
 
 function SubmitFormContent() {
   const searchParams = useSearchParams();
-  const initialType = (searchParams?.get("type") as SubmissionType) || "confession";
+  const [activeType, setActiveType] = useState<SubmissionType>("confession");
 
-  const [activeType, setActiveType] = useState<SubmissionType>(initialType);
+  useEffect(() => {
+    const typeParam = searchParams?.get("type") as SubmissionType;
+    if (typeParam && ["confession", "resource", "opportunity", "event"].includes(typeParam)) {
+      setActiveType(typeParam);
+    }
+  }, [searchParams]);
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -877,7 +881,18 @@ function SubmitFormContent() {
 export default function SubmitPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-      <Suspense fallback={<div className="p-8 text-center text-sm font-mono text-slate-500">Loading contribution portal...</div>}>
+      <Suspense
+        fallback={
+          <div className="space-y-8 animate-pulse">
+            <div className="bg-slate-900/80 rounded-3xl p-8 border border-slate-800 space-y-4">
+              <div className="h-4 w-32 bg-slate-800 rounded-full" />
+              <div className="h-8 w-64 bg-slate-800 rounded-xl" />
+              <div className="h-4 w-96 bg-slate-800 rounded-full" />
+            </div>
+            <div className="h-64 bg-slate-900/80 rounded-3xl border border-slate-800" />
+          </div>
+        }
+      >
         <SubmitFormContent />
       </Suspense>
     </div>

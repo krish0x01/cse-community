@@ -56,7 +56,7 @@ export default function Footer() {
             <div className="flex items-center gap-3 pt-2">
               <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-cyan-500/30 text-xs text-slate-300 font-mono shadow-sm">
                 <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-cyan" />
-                <span className="text-cyan-300">All systems operational</span>
+                <span className="text-cyan-300">Live Database Connected</span>
               </div>
               <span className="text-xs text-slate-500 font-mono">v3.0 Release</span>
             </div>
@@ -152,12 +152,12 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/admin" className="text-slate-400 hover:text-purple-300 transition-colors flex items-center gap-1 font-mono text-xs">
-                  <span>Council Dashboard (/admin)</span>
+                <Link href="/rules#appeals" className="text-slate-400 hover:text-cyan-300 transition-colors">
+                  Content Appeals & Disputes
                 </Link>
               </li>
               <li>
-                <Link href="/submit" className="text-slate-400 hover:text-cyan-300 transition-colors">
+                <Link href="/rules#appeals" className="text-slate-400 hover:text-cyan-300 transition-colors">
                   Report Violation
                 </Link>
               </li>

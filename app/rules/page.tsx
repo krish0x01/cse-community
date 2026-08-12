@@ -62,6 +62,7 @@ const COMMUNITY_RULES = [
 ];
 
 export default function RulesPage() {
+  const [submissionType, setSubmissionType] = useState<"report" | "appeal">("report");
   const [reportUrl, setReportUrl] = useState("");
   const [reportReason, setReportReason] = useState("Rule #1: Harassment or Personal Attack");
   const [reportDetails, setReportDetails] = useState("");
@@ -75,16 +76,16 @@ export default function RulesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           postUrl: reportUrl,
-          reason: reportReason,
+          reason: `${submissionType.toUpperCase()}: ${reportReason}`,
           details: reportDetails,
         }),
       });
       const result = await res.json();
-      setToastMessage(result.message || "Report submitted to moderation council!");
+      setToastMessage(result.message || (submissionType === "report" ? "Report submitted to moderation council!" : "Content appeal logged for council review."));
       setReportUrl("");
       setReportDetails("");
     } catch {
-      setToastMessage("Report submitted to moderation council!");
+      setToastMessage(submissionType === "report" ? "Report submitted to moderation council!" : "Content appeal logged for council review.");
     }
   };
 
@@ -241,73 +242,122 @@ export default function RulesPage() {
         </div>
       </section>
 
-      {/* Report Violation Section */}
-      <section className="bg-slate-900/85 rounded-3xl p-6 sm:p-10 border border-slate-800 shadow-card space-y-6 backdrop-blur-md">
-        <div>
-          <div className="flex items-center gap-2 text-rose-400 font-mono text-xs font-semibold uppercase tracking-wider mb-1">
-            <AlertTriangle className="w-4 h-4" />
-            <span>Community Oversight</span>
+      {/* Report Violation or Submit Appeal Section */}
+      <section id="appeals" className="bg-slate-900/85 rounded-3xl p-6 sm:p-10 border border-slate-800 shadow-card space-y-6 backdrop-blur-md">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div>
+            <div className="flex items-center gap-2 text-rose-400 font-mono text-xs font-semibold uppercase tracking-wider mb-1">
+              <AlertTriangle className="w-4 h-4" />
+              <span>Community Oversight & Governance</span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-bold text-white">
+              {submissionType === "report" ? "Report a Rule Violation or Doxxing Incident" : "Submit a Content Appeal"}
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              {submissionType === "report"
+                ? "Notice a post that contains private phone numbers, names, or malicious harassment? Submit an urgent flag."
+                : "Was your confession or academic resource taken down? Submit a dispute for Council review."}
+            </p>
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold text-white">
-            Report a Rule Violation or Doxxing Incident
-          </h3>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Notice a post that contains private phone numbers, names, or malicious harassment?
-            Submit an urgent flag for priority removal.
-          </p>
+
+          <div className="flex items-center gap-2 bg-slate-800/90 p-1 rounded-2xl border border-slate-700 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setSubmissionType("report");
+                setReportReason("Rule #1: Harassment or Personal Attack");
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                submissionType === "report"
+                  ? "bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Report Violation
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSubmissionType("appeal");
+                setReportReason("Appeal Taken-Down Confession");
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                submissionType === "appeal"
+                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Submit Appeal
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleReportSubmit} className="space-y-4 max-w-2xl">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-1.5">
-              URL or Post Identifier *
+              {submissionType === "report" ? "URL or Post Identifier *" : "Post ID or Resource Title *"}
             </label>
             <input
               required
               type="text"
               value={reportUrl}
               onChange={(e) => setReportUrl(e.target.value)}
-              placeholder="e.g. /confessions#conf-1 or post title"
+              placeholder={submissionType === "report" ? "e.g. /confessions#conf-1 or post title" : "e.g. Confession #42 or OS Lab Manual PDF"}
               className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white focus:bg-slate-900 focus:border-cyan-400"
             />
           </div>
 
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-1.5">
-              Specific Rule Violated *
+              {submissionType === "report" ? "Specific Rule Violated *" : "Appeal Category *"}
             </label>
             <select
               value={reportReason}
               onChange={(e) => setReportReason(e.target.value)}
               className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white focus:bg-slate-900 focus:border-cyan-400"
             >
-              <option value="Rule #1: Harassment or Personal Attack" className="bg-slate-900">Rule #1: Harassment or Personal Attack</option>
-              <option value="Rule #2: Doxxing or Private Information Disclosure" className="bg-slate-900">Rule #2: Doxxing / Private Contact Sharing</option>
-              <option value="Rule #3: Plagiarism / Malicious File Link" className="bg-slate-900">Rule #3: Malicious File Link or Exam Compromise</option>
-              <option value="Rule #4: Dangerous Misinformation" className="bg-slate-900">Rule #4: Dangerous Misinformation</option>
-              <option value="Rule #5: Spam / Bot Link" className="bg-slate-900">Rule #5: Repetitive Spam or Scam Link</option>
+              {submissionType === "report" ? (
+                <>
+                  <option value="Rule #1: Harassment or Personal Attack" className="bg-slate-900">Rule #1: Harassment or Personal Attack</option>
+                  <option value="Rule #2: Doxxing or Private Information Disclosure" className="bg-slate-900">Rule #2: Doxxing / Private Contact Sharing</option>
+                  <option value="Rule #3: Plagiarism / Malicious File Link" className="bg-slate-900">Rule #3: Malicious File Link or Exam Compromise</option>
+                  <option value="Rule #4: Dangerous Misinformation" className="bg-slate-900">Rule #4: Dangerous Misinformation</option>
+                  <option value="Rule #5: Spam / Bot Link" className="bg-slate-900">Rule #5: Repetitive Spam or Scam Link</option>
+                </>
+              ) : (
+                <>
+                  <option value="Appeal Taken-Down Confession" className="bg-slate-900">Appeal Taken-Down Confession</option>
+                  <option value="Appeal Removed Study Material" className="bg-slate-900">Appeal Removed Study Material</option>
+                  <option value="Appeal Expired Opportunity" className="bg-slate-900">Appeal Expired Opportunity</option>
+                  <option value="General Moderation Inquiry" className="bg-slate-900">General Moderation Inquiry</option>
+                </>
+              )}
             </select>
           </div>
 
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-1.5">
-              Additional Context for Moderators
+              {submissionType === "report" ? "Additional Context for Moderators" : "Justification for Reinstatement"}
             </label>
             <textarea
               rows={3}
               value={reportDetails}
               onChange={(e) => setReportDetails(e.target.value)}
-              placeholder="Provide brief details on why this violates community safety..."
+              placeholder={submissionType === "report" ? "Provide brief details on why this violates community safety..." : "Explain why your content complies with the honor code..."}
               className="w-full p-4 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white focus:bg-slate-900 focus:border-cyan-400"
             />
           </div>
 
           <button
             type="submit"
-            className="px-6 py-2.5 rounded-full bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-semibold text-xs sm:text-sm shadow-md transition-all flex items-center gap-2"
+            className={`px-6 py-2.5 rounded-full font-semibold text-xs sm:text-sm shadow-md transition-all flex items-center gap-2 text-white ${
+              submissionType === "report"
+                ? "bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500"
+                : "bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-slate-950"
+            }`}
           >
             <Send className="w-4 h-4" />
-            <span>Submit Urgent Report</span>
+            <span>{submissionType === "report" ? "Submit Urgent Report" : "Submit Moderation Appeal"}</span>
           </button>
         </form>
       </section>

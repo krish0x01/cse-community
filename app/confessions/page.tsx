@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   RefreshCw,
   Zap,
+  AlertCircle,
 } from "lucide-react";
 
 import { Confession } from "@/lib/types";
@@ -34,23 +35,37 @@ export default function ConfessionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"trending" | "recent" | "liked">("trending");
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean | null>(null);
   const [realtimeEventsCount, setRealtimeEventsCount] = useState(0);
 
   const fetchConfessions = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
-      const res = await fetch("/api/confessions");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      const res = await fetch("/api/confessions", { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP ${res.status}`);
+      }
+
       const json = await res.json();
       if (json.data && Array.isArray(json.data)) {
         setConfessions(json.data);
       } else {
         setConfessions([]);
       }
-      setIsLiveConnected(json.isConnected || false);
-    } catch {
+      setIsLiveConnected(json.isConnected ?? true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error && err.name === "AbortError"
+        ? "Request timed out after 8 seconds."
+        : err instanceof Error ? err.message : "Failed to load confessions feed.";
+      setFetchError(msg);
       setIsLiveConnected(false);
-      setConfessions([]);
     } finally {
       setLoading(false);
     }
@@ -234,7 +249,7 @@ export default function ConfessionsPage() {
               <span>
                 {isLiveConnected
                   ? `Realtime WebSockets Active (${realtimeEventsCount} live events)`
-                  : "Local Sandbox Mode"}
+                  : "Supabase Database Live"}
               </span>
             </div>
           </div>
@@ -355,7 +370,7 @@ export default function ConfessionsPage() {
         </div>
       </div>
 
-      {/* Confession Cards Grid / Loading Skeletons */}
+      {/* Confession Cards Grid / Loading Skeletons / Error Fallback */}
       {loading && confessions.length === 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((n) => (
@@ -379,6 +394,21 @@ export default function ConfessionsPage() {
             </div>
           ))}
         </div>
+      ) : fetchError ? (
+        <div className="text-center py-16 bg-slate-900/80 rounded-3xl border border-rose-500/30 p-8 space-y-4">
+          <AlertCircle className="w-12 h-12 text-rose-400 mx-auto" />
+          <h3 className="text-lg font-bold text-white">Unable to Load Confessions Feed</h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">{fetchError}</p>
+          <div className="pt-2">
+            <button
+              onClick={fetchConfessions}
+              className="px-5 py-2.5 rounded-full bg-slate-800 text-cyan-300 font-bold text-xs border border-cyan-500/30 hover:bg-slate-700 transition-colors inline-flex items-center gap-2"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Retry Request</span>
+            </button>
+          </div>
+        </div>
       ) : filteredConfessions.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredConfessions.map((confession) => (
@@ -390,13 +420,13 @@ export default function ConfessionsPage() {
           <MessageSquareQuote className="w-12 h-12 text-slate-600 mx-auto" />
           <h3 className="text-lg font-bold text-white">
             {searchQuery || selectedCategory !== "All"
-              ? "No confessions found"
-              : "No Confessions in Feed Yet"}
+              ? "No confessions match your filter"
+              : "No Confessions Published Yet"}
           </h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
             {searchQuery || selectedCategory !== "All"
               ? `No confessions matched your search "${searchQuery}" in category "${selectedCategory}".`
-              : "Be the first to submit an anonymous confession for moderator authorization!"}
+              : "Database is connected and ready. Be the first student to post an anonymous confession!"}
           </p>
 
           <div className="flex items-center justify-center gap-3 pt-2">

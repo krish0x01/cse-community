@@ -13,7 +13,6 @@ import {
   CheckCircle2,
   ArrowUpRight,
 } from "lucide-react";
-import { COMMUNITY_STATS } from "@/lib/mock-data";
 import { Confession, Resource, Opportunity, EventItem } from "@/lib/types";
 import ConfessionCard from "@/components/ConfessionCard";
 import ResourceCard from "@/components/ResourceCard";
@@ -204,7 +203,28 @@ export default function HomePage() {
       {/* 2. COMMUNITY STATISTICS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {COMMUNITY_STATS.map((stat, idx) => (
+          {[
+            {
+              label: "Active Engineers",
+              value: "4,850+",
+              subtext: "Across 4 batches & alumni network",
+            },
+            {
+              label: "Anonymous Confessions",
+              value: confessions.length > 0 ? `${confessions.length}+` : "Live Feed",
+              subtext: confessions.length > 0 ? "Published & authorized stories" : "Ready for student posts",
+            },
+            {
+              label: "Curated Resources",
+              value: resources.length > 0 ? `${resources.length}+` : "Vault Ready",
+              subtext: resources.length > 0 ? "Verified PYQs & lecture notes" : "Ready for note uploads",
+            },
+            {
+              label: "Opportunities Bagged",
+              value: opportunities.length > 0 ? `${opportunities.length}+` : "Radar Active",
+              subtext: opportunities.length > 0 ? "Vetted hackathons & internships" : "Ready for opportunities",
+            },
+          ].map((stat, idx) => (
             <div
               key={idx}
               className="bg-slate-900/80 rounded-2xl p-5 sm:p-6 border border-slate-800 hover:border-cyan-500/40 shadow-card hover:shadow-cyan transition-all backdrop-blur-md"
@@ -251,11 +271,27 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {trendingConfessions.map((confession) => (
-            <ConfessionCard key={confession.id} confession={confession} />
-          ))}
-        </div>
+        {trendingConfessions.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {trendingConfessions.map((confession) => (
+              <ConfessionCard key={confession.id} confession={confession} />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-slate-900/60 rounded-3xl border border-slate-800 p-8 text-center space-y-3">
+            <MessageSquareQuote className="w-10 h-10 text-purple-400 mx-auto" />
+            <h3 className="text-base font-bold text-white">No confessions in feed yet</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              Database is live and ready. Be the first student to post an anonymous confession!
+            </p>
+            <Link
+              href="/submit?type=confession"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-purple-400 text-slate-950 font-bold text-xs shadow-cyan"
+            >
+              Post First Confession
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* 4. MAIN COMMUNITY FEATURES (Bento Grid) */}
@@ -388,11 +424,27 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {featuredOpportunities.map((opportunity) => (
-            <OpportunityCard key={opportunity.id} opportunity={opportunity} />
-          ))}
-        </div>
+        {featuredOpportunities.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {featuredOpportunities.map((opportunity) => (
+              <OpportunityCard key={opportunity.id} opportunity={opportunity} />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-slate-900/60 rounded-3xl border border-slate-800 p-8 text-center space-y-3">
+            <Sparkles className="w-10 h-10 text-cyan-400 mx-auto" />
+            <h3 className="text-base font-bold text-white">No featured opportunities posted yet</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              Know of an upcoming hackathon, fellowship, or internship? Share it with the department!
+            </p>
+            <Link
+              href="/submit?type=opportunity"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-slate-800 text-cyan-300 font-bold text-xs border border-cyan-500/30 hover:bg-slate-700 transition-colors"
+            >
+              Post Opportunity
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* 6. ACADEMIC VAULT PREVIEW */}
@@ -420,11 +472,27 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {topResources.map((resource) => (
-            <ResourceCard key={resource.id} resource={resource} />
-          ))}
-        </div>
+        {topResources.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {topResources.map((resource) => (
+              <ResourceCard key={resource.id} resource={resource} />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-slate-900/60 rounded-3xl border border-slate-800 p-8 text-center space-y-3">
+            <FileCode2 className="w-10 h-10 text-cyan-400 mx-auto" />
+            <h3 className="text-base font-bold text-white">No study resources uploaded yet</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              Help fellow CSE peers by contributing handwritten notes, PYQ solutions, or lab manuals!
+            </p>
+            <Link
+              href="/submit?type=resource"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-purple-400 text-slate-950 font-bold text-xs shadow-cyan"
+            >
+              Upload Resource
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* 7. UPCOMING CAMPUS EVENTS PREVIEW */}

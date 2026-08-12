@@ -8,6 +8,7 @@ import {
   PlusCircle,
   CheckCircle,
   RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 
 import { EventItem } from "@/lib/types";
@@ -20,11 +21,22 @@ export default function EventsPage() {
   const [selectedCategory, setSelectedCategory] = useState("All Events");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
-      const res = await fetch("/api/events");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      const res = await fetch("/api/events", { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP ${res.status}`);
+      }
+
       const json = await res.json();
       if (json.data && Array.isArray(json.data)) {
         interface RawEvent {
@@ -85,7 +97,11 @@ export default function EventsPage() {
       } else {
         setEvents([]);
       }
-    } catch {
+    } catch (err: unknown) {
+      const msg = err instanceof Error && err.name === "AbortError"
+        ? "Request timed out after 8 seconds."
+        : err instanceof Error ? err.message : "Failed to load events schedule.";
+      setFetchError(msg);
       setEvents([]);
     } finally {
       setLoading(false);
@@ -193,7 +209,7 @@ export default function EventsPage() {
         </div>
       </div>
 
-      {/* Events Grid / Loading Skeletons */}
+      {/* Events Grid / Loading Skeletons / Error Fallback */}
       {loading && events.length === 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((n) => (
@@ -208,6 +224,21 @@ export default function EventsPage() {
             </div>
           ))}
         </div>
+      ) : fetchError ? (
+        <div className="text-center py-16 bg-slate-900/80 rounded-3xl border border-rose-500/30 p-8 space-y-4">
+          <AlertCircle className="w-12 h-12 text-rose-400 mx-auto" />
+          <h3 className="text-lg font-bold text-white">Unable to Load Events Schedule</h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">{fetchError}</p>
+          <div className="pt-2">
+            <button
+              onClick={fetchEvents}
+              className="px-5 py-2.5 rounded-full bg-slate-800 text-cyan-300 font-bold text-xs border border-cyan-500/30 hover:bg-slate-700 transition-colors inline-flex items-center gap-2"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Retry Request</span>
+            </button>
+          </div>
+        </div>
       ) : filteredEvents.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEvents.map((event) => (
@@ -217,21 +248,37 @@ export default function EventsPage() {
       ) : (
         <div className="text-center py-16 bg-slate-900/80 rounded-3xl border border-slate-800 p-8 space-y-3">
           <CalendarIcon className="w-12 h-12 text-slate-600 mx-auto" />
-          <h3 className="text-lg font-bold text-white">No events found</h3>
+          <h3 className="text-lg font-bold text-white">
+            {searchQuery || selectedCategory !== "All Events"
+              ? "No events match your filter"
+              : "No Events Scheduled Yet"}
+          </h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
             {searchQuery || selectedCategory !== "All Events"
               ? `No events matched your search query in ${selectedCategory}.`
-              : "No upcoming workshops or meetups scheduled at this moment."}
+              : "Database is connected and ready. Be the first to host or propose a campus workshop or tech talk!"}
           </p>
-          <button
-            onClick={() => {
-              setSearchQuery("");
-              setSelectedCategory("All Events");
-            }}
-            className="px-4 py-2 rounded-full bg-slate-800 border border-cyan-500/30 text-cyan-300 text-xs font-semibold hover:bg-slate-700"
-          >
-            Reset Filters
-          </button>
+
+          <div className="flex items-center justify-center gap-3 pt-2">
+            {searchQuery || selectedCategory !== "All Events" ? (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedCategory("All Events");
+                }}
+                className="px-4 py-2 rounded-full bg-slate-800 border border-cyan-500/30 text-cyan-300 text-xs font-semibold hover:bg-slate-700"
+              >
+                Reset Filters
+              </button>
+            ) : (
+              <Link
+                href="/submit?type=event"
+                className="px-5 py-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-purple-400 text-slate-950 font-bold text-xs shadow-cyan hover:from-cyan-300 hover:to-purple-300 transition-all"
+              >
+                Propose First Event
+              </Link>
+            )}
+          </div>
         </div>
       )}
     </div>

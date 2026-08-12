@@ -8,6 +8,7 @@ import {
   PlusCircle,
   RefreshCw,
   Database,
+  AlertCircle,
 } from "lucide-react";
 
 import { Opportunity } from "@/lib/types";
@@ -29,12 +30,23 @@ export default function OpportunitiesPage() {
   const [selectedLocation, setSelectedLocation] = useState("All Locations");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean | null>(null);
 
   const fetchOpportunities = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
-      const res = await fetch("/api/opportunities");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      const res = await fetch("/api/opportunities", { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP ${res.status}`);
+      }
+
       const json = await res.json();
       if (json.data && Array.isArray(json.data)) {
         interface RawOpp {
@@ -79,10 +91,13 @@ export default function OpportunitiesPage() {
       } else {
         setOpportunities([]);
       }
-      setIsLiveConnected(json.isConnected || false);
-    } catch {
+      setIsLiveConnected(json.isConnected ?? true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error && err.name === "AbortError"
+        ? "Request timed out after 8 seconds."
+        : err instanceof Error ? err.message : "Failed to load opportunity radar.";
+      setFetchError(msg);
       setIsLiveConnected(false);
-      setOpportunities([]);
     } finally {
       setLoading(false);
     }
@@ -223,8 +238,45 @@ export default function OpportunitiesPage() {
         </div>
       </div>
 
-      {/* Opportunity Cards Grid */}
-      {filteredOpportunities.length > 0 ? (
+      {/* Opportunity Cards Grid / Loading Skeletons / Error Fallback */}
+      {loading && opportunities.length === 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((n) => (
+            <div
+              key={n}
+              className="bg-slate-900/60 rounded-3xl p-6 border border-slate-800 space-y-4 animate-pulse"
+            >
+              <div className="flex items-center justify-between">
+                <div className="h-4 w-32 bg-slate-800 rounded-full" />
+                <div className="h-4 w-20 bg-slate-800 rounded-full" />
+              </div>
+              <div className="space-y-2 py-2">
+                <div className="h-4 bg-slate-800 rounded w-full" />
+                <div className="h-3.5 bg-slate-800 rounded w-3/4" />
+              </div>
+              <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                <div className="h-4 w-20 bg-slate-800 rounded-full" />
+                <div className="h-4 w-24 bg-slate-800 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : fetchError ? (
+        <div className="text-center py-16 bg-slate-900/80 rounded-3xl border border-rose-500/30 p-8 space-y-4">
+          <AlertCircle className="w-12 h-12 text-rose-400 mx-auto" />
+          <h3 className="text-lg font-bold text-white">Unable to Load Opportunity Radar</h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">{fetchError}</p>
+          <div className="pt-2">
+            <button
+              onClick={fetchOpportunities}
+              className="px-5 py-2.5 rounded-full bg-slate-800 text-cyan-300 font-bold text-xs border border-cyan-500/30 hover:bg-slate-700 transition-colors inline-flex items-center gap-2"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Retry Request</span>
+            </button>
+          </div>
+        </div>
+      ) : filteredOpportunities.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredOpportunities.map((opportunity) => (
             <OpportunityCard key={opportunity.id} opportunity={opportunity} />
@@ -233,20 +285,38 @@ export default function OpportunitiesPage() {
       ) : (
         <div className="text-center py-16 bg-slate-900/80 rounded-3xl border border-slate-800 p-8 space-y-3">
           <Sparkles className="w-12 h-12 text-slate-600 mx-auto" />
-          <h3 className="text-lg font-bold text-white">No opportunities found</h3>
+          <h3 className="text-lg font-bold text-white">
+            {searchQuery || selectedType !== "All Types" || selectedLocation !== "All Locations"
+              ? "No opportunities match your filter"
+              : "No Opportunities Posted Yet"}
+          </h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            No opportunities matched &quot;{searchQuery}&quot; under {selectedType} ({selectedLocation}).
+            {searchQuery || selectedType !== "All Types" || selectedLocation !== "All Locations"
+              ? `No opportunities matched "${searchQuery}" under ${selectedType} (${selectedLocation}).`
+              : "Database is connected and ready. Be the first to share a hackathon, internship, or tech opportunity!"}
           </p>
-          <button
-            onClick={() => {
-              setSearchQuery("");
-              setSelectedType("All Types");
-              setSelectedLocation("All Locations");
-            }}
-            className="px-4 py-2 rounded-full bg-slate-800 border border-cyan-500/30 text-cyan-300 text-xs font-semibold hover:bg-slate-700"
-          >
-            Reset Filters
-          </button>
+
+          <div className="flex items-center justify-center gap-3 pt-2">
+            {searchQuery || selectedType !== "All Types" || selectedLocation !== "All Locations" ? (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedType("All Types");
+                  setSelectedLocation("All Locations");
+                }}
+                className="px-4 py-2 rounded-full bg-slate-800 border border-cyan-500/30 text-cyan-300 text-xs font-semibold hover:bg-slate-700"
+              >
+                Reset Filters
+              </button>
+            ) : (
+              <Link
+                href="/submit?type=opportunity"
+                className="px-5 py-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-purple-400 text-slate-950 font-bold text-xs shadow-cyan hover:from-cyan-300 hover:to-purple-300 transition-all"
+              >
+                Post First Opportunity
+              </Link>
+            )}
+          </div>
         </div>
       )}
     </div>

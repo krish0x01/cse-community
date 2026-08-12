@@ -10,6 +10,7 @@ import {
   FileText,
   RefreshCw,
   Database,
+  AlertCircle,
 } from "lucide-react";
 
 import { Resource } from "@/lib/types";
@@ -41,12 +42,23 @@ export default function ResourcesPage() {
   const [selectedSemester, setSelectedSemester] = useState("All Semesters");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean | null>(null);
 
   const fetchResources = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
-      const res = await fetch("/api/resources");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      const res = await fetch("/api/resources", { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP ${res.status}`);
+      }
+
       const json = await res.json();
       if (json.data && Array.isArray(json.data)) {
         interface RawResource {
@@ -90,10 +102,13 @@ export default function ResourcesPage() {
       } else {
         setResources([]);
       }
-      setIsLiveConnected(json.isConnected || false);
-    } catch {
+      setIsLiveConnected(json.isConnected ?? true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error && err.name === "AbortError"
+        ? "Request timed out after 8 seconds."
+        : err instanceof Error ? err.message : "Failed to load resources vault.";
+      setFetchError(msg);
       setIsLiveConnected(false);
-      setResources([]);
     } finally {
       setLoading(false);
     }
@@ -236,8 +251,45 @@ export default function ResourcesPage() {
         </div>
       </div>
 
-      {/* Resources Cards Grid */}
-      {filteredResources.length > 0 ? (
+      {/* Resources Cards Grid / Loading Skeletons / Error Fallback */}
+      {loading && resources.length === 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <div
+              key={n}
+              className="bg-slate-900/60 rounded-3xl p-6 border border-slate-800 space-y-4 animate-pulse"
+            >
+              <div className="flex items-center justify-between">
+                <div className="h-4 w-28 bg-slate-800 rounded-full" />
+                <div className="h-4 w-16 bg-slate-800 rounded-full" />
+              </div>
+              <div className="space-y-2 py-2">
+                <div className="h-4 bg-slate-800 rounded w-full" />
+                <div className="h-3.5 bg-slate-800 rounded w-4/6" />
+              </div>
+              <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                <div className="h-4 w-16 bg-slate-800 rounded-full" />
+                <div className="h-4 w-20 bg-slate-800 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : fetchError ? (
+        <div className="text-center py-16 bg-slate-900/80 rounded-3xl border border-rose-500/30 p-8 space-y-4">
+          <AlertCircle className="w-12 h-12 text-rose-400 mx-auto" />
+          <h3 className="text-lg font-bold text-white">Unable to Load Academic Vault</h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">{fetchError}</p>
+          <div className="pt-2">
+            <button
+              onClick={fetchResources}
+              className="px-5 py-2.5 rounded-full bg-slate-800 text-cyan-300 font-bold text-xs border border-cyan-500/30 hover:bg-slate-700 transition-colors inline-flex items-center gap-2"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Retry Request</span>
+            </button>
+          </div>
+        </div>
+      ) : filteredResources.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredResources.map((resource) => (
             <ResourceCard key={resource.id} resource={resource} />
@@ -246,20 +298,38 @@ export default function ResourcesPage() {
       ) : (
         <div className="text-center py-16 bg-slate-900/80 rounded-3xl border border-slate-800 p-8 space-y-3">
           <FileText className="w-12 h-12 text-slate-600 mx-auto" />
-          <h3 className="text-lg font-bold text-white">No resources found</h3>
+          <h3 className="text-lg font-bold text-white">
+            {searchQuery || selectedCategory !== "All Resources" || selectedSemester !== "All Semesters"
+              ? "No resources match your filter"
+              : "No Academic Resources Uploaded Yet"}
+          </h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            No study material matched &quot;{searchQuery}&quot; in {selectedSemester} ({selectedCategory}).
+            {searchQuery || selectedCategory !== "All Resources" || selectedSemester !== "All Semesters"
+              ? `No study material matched "${searchQuery}" in ${selectedSemester} (${selectedCategory}).`
+              : "Database is connected and ready. Be the first contributor to share lecture notes, PYQs, or practical codes!"}
           </p>
-          <button
-            onClick={() => {
-              setSearchQuery("");
-              setSelectedCategory("All Resources");
-              setSelectedSemester("All Semesters");
-            }}
-            className="px-4 py-2 rounded-full bg-slate-800 border border-purple-500/30 text-purple-300 text-xs font-semibold hover:bg-slate-700"
-          >
-            Reset Filters
-          </button>
+
+          <div className="flex items-center justify-center gap-3 pt-2">
+            {searchQuery || selectedCategory !== "All Resources" || selectedSemester !== "All Semesters" ? (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedCategory("All Resources");
+                  setSelectedSemester("All Semesters");
+                }}
+                className="px-4 py-2 rounded-full bg-slate-800 border border-purple-500/30 text-purple-300 text-xs font-semibold hover:bg-slate-700"
+              >
+                Reset Filters
+              </button>
+            ) : (
+              <Link
+                href="/submit?type=resource"
+                className="px-5 py-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-purple-400 text-slate-950 font-bold text-xs shadow-cyan hover:from-cyan-300 hover:to-purple-300 transition-all"
+              >
+                Upload First Resource
+              </Link>
+            )}
+          </div>
         </div>
       )}
     </div>
