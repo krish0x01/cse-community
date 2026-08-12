@@ -548,7 +548,7 @@ export default function AdminPage() {
             </span>
             <span className="text-slate-600">|</span>
             <span className="text-xs font-mono text-slate-400">
-              Database: {isSupabaseLive ? "Supabase PostgreSQL (Live)" : "Local Mock Sandbox"}
+              Database: {isSupabaseLive ? "Supabase PostgreSQL (Live)" : "Offline Local Storage"}
             </span>
           </div>
 

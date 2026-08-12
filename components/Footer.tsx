@@ -58,7 +58,7 @@ export default function Footer() {
                 <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-cyan" />
                 <span className="text-cyan-300">All systems operational</span>
               </div>
-              <span className="text-xs text-slate-500 font-mono">Build 2026.4</span>
+              <span className="text-xs text-slate-500 font-mono">v3.0 Release</span>
             </div>
           </div>
 

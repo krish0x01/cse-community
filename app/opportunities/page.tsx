@@ -130,7 +130,7 @@ export default function OpportunitiesPage() {
                 }`}
               >
                 <Database className="w-3 h-3" />
-                <span>{isLiveConnected ? "Supabase Live Connected" : "Local Mock Mode"}</span>
+                <span>{isLiveConnected ? "Supabase Live Connected" : "Offline Standalone Mode"}</span>
               </div>
             )}
           </div>
