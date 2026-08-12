@@ -13,8 +13,6 @@ import {
   CheckCircle2,
   XCircle,
   Database,
-  Lock,
-  Unlock,
   RefreshCw,
   ExternalLink,
   Star,
@@ -40,10 +38,6 @@ interface ReportItem {
 }
 
 export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passcode, setPasscode] = useState("");
-  const [authError, setAuthError] = useState("");
-
   const [activeTab, setActiveTab] = useState<
     "reports" | "confessions" | "resources" | "opportunities" | "events" | "telemetry"
   >("confessions");
@@ -192,34 +186,8 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchAllData();
-    }
-  }, [isAuthenticated, fetchAllData]);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError("");
-
-    try {
-      const res = await fetch("/api/admin/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ passcode: passcode.trim() }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Incorrect access code");
-      }
-
-      setIsAuthenticated(true);
-      setToastMessage("Moderator session initialized ✓");
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Access denied";
-      setAuthError(msg);
-    }
-  };
+    fetchAllData();
+  }, [fetchAllData]);
 
   // Action: Update Report Status
   const handleUpdateReport = async (reportId: string, status: "RESOLVED" | "DISMISSED") => {
@@ -449,55 +417,6 @@ export default function AdminPage() {
     }
   };
 
-  // If not authenticated, display Security Gate
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 relative">
-        <div className="absolute top-1/3 left-1/3 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-1/3 right-1/3 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="max-w-md w-full bg-slate-900/90 rounded-3xl border border-slate-800 shadow-2xl p-8 space-y-6 relative z-10 backdrop-blur-md">
-          <div className="text-center space-y-2">
-            <div className="w-14 h-14 rounded-2xl bg-purple-950/80 border border-purple-500/40 text-purple-400 flex items-center justify-center mx-auto shadow-purple">
-              <Lock className="w-7 h-7" />
-            </div>
-            <h1 className="text-2xl font-black text-white tracking-tight">
-              Moderator Command Center
-            </h1>
-            <p className="text-xs text-slate-400 font-mono">
-              Restricted to CSE Community Elected Council
-            </p>
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">
-                Council Access Code
-              </label>
-              <input
-                type="password"
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
-                placeholder="Enter access code..."
-                className="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white font-mono text-sm focus:border-purple-400"
-                autoFocus
-              />
-              {authError && <p className="text-xs text-rose-400 mt-2 font-mono">{authError}</p>}
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-400 hover:from-purple-400 hover:to-cyan-300 text-slate-950 font-bold text-sm shadow-purple transition-all active:scale-98 flex items-center justify-center gap-2"
-            >
-              <Unlock className="w-4 h-4" />
-              <span>Unlock Admin Panel</span>
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
   const isApprovedConfession = (c: Confession) => c.isApproved === true || c.status === "APPROVED";
   const isApprovedOpportunity = (o: Opportunity) => o.isApproved === true || o.status === "APPROVED";
   const isApprovedEvent = (e: EventItem) => e.isApproved === true || e.status === "APPROVED";
@@ -565,13 +484,6 @@ export default function AdminPage() {
           >
             <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${loading ? "animate-spin" : ""}`} />
             <span>Sync Live</span>
-          </button>
-
-          <button
-            onClick={() => setIsAuthenticated(false)}
-            className="px-4 py-2.5 rounded-full bg-rose-950/60 hover:bg-rose-900 border border-rose-500/40 text-rose-300 text-xs font-mono font-semibold transition-colors"
-          >
-            Lock Session
           </button>
         </div>
 

@@ -28,7 +28,11 @@ export const metadata: Metadata = {
     "Hackathons 2026",
     "CSE Placements",
   ],
-  authors: [{ name: "CSE Community" }],
+  authors: [
+    { name: "krish0x01", url: "https://github.com/krish0x01" },
+    { name: "CSE Community" },
+  ],
+  creator: "krish0x01",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://csecommunity.org"),
   openGraph: {
     title: "CSE Community — Our campus. Unfiltered.",

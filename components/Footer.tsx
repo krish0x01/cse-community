@@ -167,7 +167,18 @@ export default function Footer() {
 
         {/* Bottom Credits */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© 2026 CSE Community. Built by engineering students for students.</p>
+          <p>
+            © 2026 CSE Community. Created & engineered by{" "}
+            <a
+              href="https://github.com/krish0x01"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors underline decoration-cyan-500/40 underline-offset-2"
+            >
+              krish0x01
+            </a>
+            .
+          </p>
           <div className="flex items-center gap-6">
             <span>Independent & Non-Commercial</span>
             <span className="inline-flex items-center gap-1 text-slate-400">
