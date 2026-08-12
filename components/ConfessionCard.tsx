@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Toast from "./Toast";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { formatRelativeTime } from "@/lib/date";
 
 interface ConfessionCardProps {
   confession: Confession;
@@ -51,9 +52,7 @@ export default function ConfessionCard({ confession }: ConfessionCardProps) {
             id: c.id,
             author: c.author,
             text: c.text,
-            timestamp: c.created_at
-              ? new Date(c.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-              : "Just now",
+            timestamp: formatRelativeTime(c.created_at),
           }));
           setComments(mapped);
         }
@@ -205,7 +204,7 @@ export default function ConfessionCard({ confession }: ConfessionCardProps) {
                     {confession.batch}
                   </span>
                 </div>
-                <span className="text-[11px] text-slate-400">{confession.timestamp}</span>
+                <span className="text-[11px] text-slate-400">{formatRelativeTime(confession.timestamp)}</span>
               </div>
             </div>
 

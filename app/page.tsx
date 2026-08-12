@@ -18,6 +18,7 @@ import ConfessionCard from "@/components/ConfessionCard";
 import ResourceCard from "@/components/ResourceCard";
 import OpportunityCard from "@/components/OpportunityCard";
 import EventCard from "@/components/EventCard";
+import { parseEventDate, formatTime12h } from "@/lib/date";
 
 export default function HomePage() {
   const [confessions, setConfessions] = useState<Confession[]>([]);
@@ -81,20 +82,16 @@ export default function HomePage() {
           }
 
           const normalizedEvents: EventItem[] = (resEvt.data as RawEvent[]).map((e) => {
-            const d = new Date(e.date || Date.now());
-            const month = !isNaN(d.getTime())
-              ? d.toLocaleString("en-US", { month: "short" }).toUpperCase()
-              : "OCT";
-            const day = !isNaN(d.getTime()) ? String(d.getDate()).padStart(2, "0") : "24";
+            const { month, day, formattedDate } = parseEventDate(e.date);
 
             return {
               id: e.id,
               title: e.title,
               category: (e.category as EventItem["category"]) || "Tech Talk",
-              date: e.date,
+              date: formattedDate,
               month,
               day,
-              time: e.time,
+              time: formatTime12h(e.time),
               venue: e.venue,
               isOnline: e.is_online ?? e.isOnline ?? false,
               speaker: e.speaker || {

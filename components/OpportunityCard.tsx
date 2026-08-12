@@ -15,6 +15,7 @@ import {
   Building2,
 } from "lucide-react";
 import Toast from "./Toast";
+import { calculateDaysRemaining } from "@/lib/date";
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
@@ -94,7 +95,7 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
             </span>
             <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-lg bg-rose-950/80 text-rose-300 border border-rose-500/40">
               <Clock className="w-3 h-3 text-rose-400" />
-              {opportunity.daysRemaining} days left
+              {calculateDaysRemaining(opportunity.deadline).label}
             </span>
           </div>
 

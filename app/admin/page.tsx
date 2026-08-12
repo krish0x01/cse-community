@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import Toast from "@/components/Toast";
 import { Confession, Resource, Opportunity, EventItem } from "@/lib/types";
+import { parseEventDate, formatTime12h, formatRelativeTime } from "@/lib/date";
 
 
 interface ReportItem {
@@ -131,11 +132,7 @@ export default function AdminPage() {
         }
 
         const normalized: EventItem[] = (dataEvt.data as RawEvent[]).map((e) => {
-          const d = new Date(e.date || Date.now());
-          const month = !isNaN(d.getTime())
-            ? d.toLocaleString("en-US", { month: "short" }).toUpperCase()
-            : "OCT";
-          const day = !isNaN(d.getTime()) ? String(d.getDate()).padStart(2, "0") : "24";
+          const { month, day, formattedDate } = parseEventDate(e.date);
 
           const isApproved = e.is_approved === true || e.status === "APPROVED" || e.isApproved === true;
           const status: "PENDING" | "APPROVED" | "REJECTED" = isApproved
@@ -148,10 +145,10 @@ export default function AdminPage() {
             id: e.id,
             title: e.title,
             category: (e.category as EventItem["category"]) || "Tech Talk",
-            date: e.date,
+            date: formattedDate,
             month,
             day,
-            time: e.time,
+            time: formatTime12h(e.time),
             venue: e.venue,
             isOnline: e.is_online ?? e.isOnline ?? false,
             speaker: e.speaker || {
@@ -938,7 +935,7 @@ export default function AdminPage() {
                     )}
 
                     <div className="text-[11px] font-mono text-slate-500">
-                      Filed: {new Date(report.created_at).toLocaleString()} • Status:{" "}
+                      Filed: {formatRelativeTime(report.created_at)} • Status:{" "}
                       <span
                         className={
                           report.status === "PENDING_REVIEW"

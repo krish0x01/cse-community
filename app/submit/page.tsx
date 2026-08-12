@@ -682,11 +682,10 @@ function SubmitFormContent() {
                     </label>
                     <input
                       required
-                      type="text"
+                      type="date"
                       value={oppDeadline}
                       onChange={(e) => setOppDeadline(e.target.value)}
-                      placeholder="e.g. March 25, 2026"
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white focus:bg-slate-900"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white font-mono focus:bg-slate-900"
                     />
                   </div>
 
@@ -768,15 +767,14 @@ function SubmitFormContent() {
 
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono mb-2">
-                      Date (e.g. Aug 28, 2026) *
+                      Event Date *
                     </label>
                     <input
                       required
-                      type="text"
+                      type="date"
                       value={eventDate}
                       onChange={(e) => setEventDate(e.target.value)}
-                      placeholder="Aug 28, 2026"
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white focus:bg-slate-900"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white focus:bg-slate-900 font-mono"
                     />
                   </div>
 
@@ -789,7 +787,7 @@ function SubmitFormContent() {
                       type="text"
                       value={eventTime}
                       onChange={(e) => setEventTime(e.target.value)}
-                      placeholder="5:00 PM - 7:00 PM"
+                      placeholder="e.g. 5:00 PM - 7:00 PM"
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-sm text-white focus:bg-slate-900"
                     />
                   </div>

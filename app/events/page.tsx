@@ -13,6 +13,7 @@ import {
 
 import { EventItem } from "@/lib/types";
 import EventCard from "@/components/EventCard";
+import { parseEventDate, formatTime12h } from "@/lib/date";
 
 const EVENT_CATEGORIES = ["All Events", "Tech Talk", "Workshop", "Meetup"];
 
@@ -66,20 +67,16 @@ export default function EventsPage() {
         }
 
         const normalized: EventItem[] = (json.data as RawEvent[]).map((e) => {
-          const d = new Date(e.date || Date.now());
-          const month = !isNaN(d.getTime())
-            ? d.toLocaleString("en-US", { month: "short" }).toUpperCase()
-            : "OCT";
-          const day = !isNaN(d.getTime()) ? String(d.getDate()).padStart(2, "0") : "24";
+          const { month, day, formattedDate } = parseEventDate(e.date);
 
           return {
             id: e.id,
             title: e.title,
             category: (e.category as EventItem["category"]) || "Tech Talk",
-            date: e.date,
+            date: formattedDate,
             month,
             day,
-            time: e.time,
+            time: formatTime12h(e.time),
             venue: e.venue,
             isOnline: e.is_online ?? e.isOnline ?? false,
             speaker: e.speaker || {
