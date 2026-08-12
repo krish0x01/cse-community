@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import {
+  checkRateLimit,
+  getClientIP,
+  rateLimitResponse,
+  sanitizeString,
+} from "@/lib/security";
 
 
 export async function GET(request: Request) {
@@ -111,53 +117,34 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIP(request);
+    // Rate limit: Max 5 event proposals per 5 minutes per IP
+    const limit = checkRateLimit(`post_event_${ip}`, 5, 5 * 60 * 1000);
+    if (!limit.allowed) {
+      return rateLimitResponse(limit.resetInSec);
+    }
+
     const body = await request.json();
-    const {
-      title,
-      category,
-      date,
-      time,
-      venue,
-      isOnline,
-      speakerName,
-      speakerRole,
-      speakerCompany,
-      description,
-    } = body;
+    const title = sanitizeString(body?.title || "");
+    const category = sanitizeString(body?.category || "Workshop");
+    const date = sanitizeString(body?.date || "Upcoming");
+    const time = sanitizeString(body?.time || "5:00 PM");
+    const venue = sanitizeString(body?.venue || "Campus");
+    const isOnline = Boolean(body?.isOnline);
+    const speakerName = sanitizeString(body?.speakerName || "Guest Speaker");
+    const speakerRole = sanitizeString(body?.speakerRole || "Developer");
+    const speakerCompany = sanitizeString(body?.speakerCompany || "Tech Community");
+    const description = sanitizeString(body?.description || "");
 
     if (!title || !date || !venue) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     if (!isSupabaseConfigured() || !supabase) {
-      const mockEvent = {
-        id: `evt-${Date.now()}`,
-        title: title.trim(),
-        category: category || "Workshop",
-        date: date || "Upcoming",
-        month: "TBA",
-        day: "01",
-        time: time || "5:00 PM",
-        venue: venue || "Campus",
-        isOnline: Boolean(isOnline),
-        speaker: {
-          name: speakerName || "Guest Speaker",
-          role: speakerRole || "Developer",
-          company: speakerCompany || "Tech Community",
-        },
-        totalSeats: 100,
-        registeredCount: 1,
-        description: description || "",
-        tags: [],
-        status: "PENDING" as const,
-        isApproved: false,
-      };
-      return NextResponse.json({
-        data: mockEvent,
-        source: "mock",
-        isConnected: false,
-        message: "🛡️ Campus event submitted for moderator authorization! It will go live once approved by the Council.",
-      });
+      return NextResponse.json(
+        { error: "Supabase database is not configured in .env.local" },
+        { status: 400 }
+      );
     }
 
     let insertRes = await supabase

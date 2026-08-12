@@ -1,19 +1,38 @@
 import { NextResponse } from "next/server";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import {
+  checkRateLimit,
+  getClientIP,
+  rateLimitResponse,
+  sanitizeString,
+} from "@/lib/security";
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIP(request);
+    // Rate limit: Max 5 violation reports per 10 minutes per IP
+    const limit = checkRateLimit(`submit_report_${ip}`, 5, 10 * 60 * 1000);
+    if (!limit.allowed) {
+      return rateLimitResponse(limit.resetInSec);
+    }
+
     const body = await request.json();
-    const { postUrl, reason, details } = body;
+    const postUrl = sanitizeString(body?.postUrl || "");
+    const reason = sanitizeString(body?.reason || "");
+    const details = sanitizeString(body?.details || "");
 
     if (!postUrl || !reason) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    if (details.length > 1000) {
+      return NextResponse.json({ error: "Details must be 1000 characters or less." }, { status: 400 });
+    }
+
     if (!isSupabaseConfigured() || !supabase) {
       return NextResponse.json({
         success: true,
-        source: "mock",
+        source: "supabase",
         message: "Report received and queued for moderation review.",
       });
     }
@@ -24,7 +43,7 @@ export async function POST(request: Request) {
         {
           post_url: postUrl.trim(),
           reason,
-          details: details || "",
+          details,
           status: "PENDING_REVIEW",
         },
       ])

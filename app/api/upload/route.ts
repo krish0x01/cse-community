@@ -1,8 +1,40 @@
 import { NextResponse } from "next/server";
 import { supabase, getServiceSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import {
+  checkRateLimit,
+  getClientIP,
+  rateLimitResponse,
+  sanitizeString,
+} from "@/lib/security";
+
+const DISALLOWED_EXTENSIONS = [
+  "EXE",
+  "DLL",
+  "SH",
+  "BAT",
+  "CMD",
+  "JS",
+  "MJS",
+  "PHP",
+  "PY",
+  "HTML",
+  "HTM",
+  "SVG",
+  "VBS",
+  "PS1",
+];
+
+const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // 15 MB
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIP(request);
+    // Rate limit: Max 5 file uploads per 10 minutes per IP
+    const limit = checkRateLimit(`upload_file_${ip}`, 5, 10 * 60 * 1000);
+    if (!limit.allowed) {
+      return rateLimitResponse(limit.resetInSec);
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
 
@@ -10,20 +42,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1) + " MB";
+    // 1. File Size Validation
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return NextResponse.json(
+        { error: "File exceeds maximum allowed size of 15 MB." },
+        { status: 400 }
+      );
+    }
+
+    // 2. Extension Validation & Path Traversal Prevention
     const fileExt = file.name.split(".").pop()?.toUpperCase() || "PDF";
-    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+    if (DISALLOWED_EXTENSIONS.includes(fileExt)) {
+      return NextResponse.json(
+        { error: `Executable or script file formats (.${fileExt}) are strictly prohibited.` },
+        { status: 400 }
+      );
+    }
+
+    const rawName = file.name.replace(/\\/g, "/").split("/").pop() || "upload";
+    const cleanFileName = sanitizeString(rawName.replace(/[^a-zA-Z0-9.-]/g, "_"));
+    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1) + " MB";
     const filePath = `notes/${Date.now()}_${cleanFileName}`;
 
     if (!isSupabaseConfigured()) {
-      return NextResponse.json({
-        url: `https://storage.googleapis.com/cse-academic-vault/${cleanFileName}`,
-        fileName: file.name,
-        fileSize: fileSizeMB,
-        format: fileExt,
-        source: "mock",
-        message: "File attached (Mock Storage Mode)",
-      });
+      return NextResponse.json(
+        { error: "Supabase storage is not configured in .env.local" },
+        { status: 400 }
+      );
     }
 
     const client = getServiceSupabase() || supabase;
@@ -44,7 +89,6 @@ export async function POST(request: Request) {
       // Continue if bucket listing is restricted
     }
 
-    // Convert file to ArrayBuffer / Buffer for upload
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
@@ -57,13 +101,9 @@ export async function POST(request: Request) {
       });
 
     if (uploadError) {
-      console.error("Supabase storage upload error:", uploadError);
-
-      // Return informative error with exact resolution steps
       return NextResponse.json(
         {
           error: `Storage Error: ${uploadError.message}. In Supabase Dashboard -> Storage -> Create bucket named 'academic-vault' and set Public = ON.`,
-          details: uploadError,
         },
         { status: 500 }
       );

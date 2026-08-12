@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import {
+  checkRateLimit,
+  getClientIP,
+  rateLimitResponse,
+  sanitizeString,
+  containsPrivateInformation,
+} from "@/lib/security";
 
 
 export async function GET(request: Request) {
@@ -118,29 +125,56 @@ export async function GET(request: Request) {
   }
 }
 
+
+
 export async function POST(request: Request) {
   try {
+    const ip = getClientIP(request);
+    // Rate limit: Max 5 confession posts per minute per IP
+    const limit = checkRateLimit(`post_confession_${ip}`, 5, 60 * 1000);
+    if (!limit.allowed) {
+      return rateLimitResponse(limit.resetInSec);
+    }
+
     const body = await request.json();
-    const { alias, batch, category, content, tags } = body;
+
+    const alias = sanitizeString(body?.alias || "");
+    const content = sanitizeString(body?.content || "");
+    const category = sanitizeString(body?.category || "");
+    const batch = sanitizeString(body?.batch || "CSE '26");
+    const tags = body?.tags;
 
     if (!content || !category || !alias) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Safety / Anti-Doxxing filter: block phone numbers (10 digits)
-    const phoneRegex = /(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
-    if (phoneRegex.test(content)) {
+    if (alias.length > 50) {
+      return NextResponse.json({ error: "Alias must be 50 characters or less." }, { status: 400 });
+    }
+
+    if (content.length > 2500) {
+      return NextResponse.json({ error: "Confession content must be 2500 characters or less." }, { status: 400 });
+    }
+
+    // Comprehensive Anti-Doxxing Privacy Safeguard
+    const privacyCheck = containsPrivateInformation(content) || containsPrivateInformation(alias);
+    if (privacyCheck.containsPrivate) {
       return NextResponse.json(
-        { error: "Submission blocked: Phone numbers / personal contact details violate Rule #2 (Anti-Doxxing)." },
+        { error: `Submission blocked: ${privacyCheck.reason}` },
         { status: 422 }
       );
     }
 
-    const parsedTags = Array.isArray(tags)
-      ? tags
-      : typeof tags === "string"
-      ? tags.split(/\s+/).filter(Boolean)
-      : [];
+    const parsedTags = (
+      Array.isArray(tags)
+        ? tags
+        : typeof tags === "string"
+        ? tags.split(/\s+/)
+        : []
+    )
+      .map((t) => sanitizeString(String(t)))
+      .filter(Boolean)
+      .slice(0, 10);
 
     if (!isSupabaseConfigured() || !supabase) {
       return NextResponse.json(

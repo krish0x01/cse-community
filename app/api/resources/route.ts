@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-
+import {
+  checkRateLimit,
+  getClientIP,
+  rateLimitResponse,
+  sanitizeString,
+} from "@/lib/security";
 
 export async function GET(request: Request) {
   try {
@@ -37,40 +42,37 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIP(request);
+    // Rate limit: Max 5 resource uploads per 5 minutes per IP
+    const limit = checkRateLimit(`post_resource_${ip}`, 5, 5 * 60 * 1000);
+    if (!limit.allowed) {
+      return rateLimitResponse(limit.resetInSec);
+    }
+
     const body = await request.json();
-    const {
-      title,
-      subjectCode,
-      subjectName,
-      semester,
-      category,
-      author,
-      linkUrl,
-      description,
-    } = body;
+    const title = sanitizeString(body?.title || "");
+    const subjectCode = sanitizeString(body?.subjectCode || "").toUpperCase();
+    const subjectName = sanitizeString(body?.subjectName || "Computer Science");
+    const semester = sanitizeString(body?.semester || "Semester 5");
+    const category = sanitizeString(body?.category || "Notes");
+    const author = sanitizeString(body?.author || "Student Contributor");
+    const linkUrl = sanitizeString(body?.linkUrl || "");
+    const description = sanitizeString(body?.description || "");
 
     if (!title || !subjectCode || !linkUrl) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // URL Validation (must begin with http:// or https://)
+    if (!/^https?:\/\/.+/i.test(linkUrl)) {
+      return NextResponse.json({ error: "Invalid link URL. Must start with http:// or https://" }, { status: 400 });
+    }
+
     if (!isSupabaseConfigured() || !supabase) {
-      const mockResource = {
-        id: `res-${Date.now()}`,
-        title: title.trim(),
-        subjectCode: subjectCode.trim().toUpperCase(),
-        subjectName: subjectName || "Computer Science",
-        semester: semester || "Semester 5",
-        category: category || "Notes",
-        author: author || "Student Contributor",
-        verified: true,
-        format: "PDF",
-        fileSize: "5.0 MB",
-        downloads: 0,
-        rating: 5.0,
-        linkUrl,
-        description: description || "",
-      };
-      return NextResponse.json({ data: mockResource, source: "mock", message: "Resource contributed successfully!" });
+      return NextResponse.json(
+        { error: "Supabase database is not configured in .env.local" },
+        { status: 400 }
+      );
     }
 
     const { data, error } = await supabase
@@ -78,18 +80,18 @@ export async function POST(request: Request) {
       .insert([
         {
           title: title.trim(),
-          subject_code: subjectCode.trim().toUpperCase(),
-          subject_name: subjectName || "Computer Science",
-          semester: semester || "Semester 5",
-          category: category || "Notes",
-          author: author || "Student Contributor",
+          subject_code: subjectCode.trim(),
+          subject_name: subjectName,
+          semester,
+          category,
+          author,
           verified: true,
           format: "PDF",
           file_size: "5.0 MB",
           downloads: 0,
           rating: 5.0,
           link_url: linkUrl,
-          description: description || "",
+          description,
         },
       ])
       .select()

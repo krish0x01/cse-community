@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import {
+  checkRateLimit,
+  getClientIP,
+  rateLimitResponse,
+  sanitizeString,
+} from "@/lib/security";
 
 
 export async function GET(request: Request) {
@@ -100,54 +106,49 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIP(request);
+    // Rate limit: Max 5 opportunity submissions per 5 minutes per IP
+    const limit = checkRateLimit(`post_opp_${ip}`, 5, 5 * 60 * 1000);
+    if (!limit.allowed) {
+      return rateLimitResponse(limit.resetInSec);
+    }
+
     const body = await request.json();
-    const {
-      title,
-      company,
-      type,
-      location,
-      stipendPrize,
-      deadline,
-      applyUrl,
-      description,
-      eligibility,
-      tags,
-    } = body;
+    const title = sanitizeString(body?.title || "");
+    const company = sanitizeString(body?.company || "");
+    const type = sanitizeString(body?.type || "Hackathon");
+    const location = sanitizeString(body?.location || "Remote");
+    const stipendPrize = sanitizeString(body?.stipendPrize || "Competitive");
+    const deadline = sanitizeString(body?.deadline || "Upcoming");
+    const applyUrl = sanitizeString(body?.applyUrl || "");
+    const description = sanitizeString(body?.description || "");
+    const eligibility = sanitizeString(body?.eligibility || "Open to all students");
+    const tags = body?.tags;
 
     if (!title || !company || !applyUrl) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const parsedTags = Array.isArray(tags)
-      ? tags
-      : typeof tags === "string"
-      ? tags.split(/\s+/).filter(Boolean)
-      : [];
+    if (!/^https?:\/\/.+/i.test(applyUrl)) {
+      return NextResponse.json({ error: "Invalid application URL. Must start with http:// or https://" }, { status: 400 });
+    }
+
+    const parsedTags = (
+      Array.isArray(tags)
+        ? tags
+        : typeof tags === "string"
+        ? tags.split(/\s+/)
+        : []
+    )
+      .map((t) => sanitizeString(String(t)))
+      .filter(Boolean)
+      .slice(0, 10);
 
     if (!isSupabaseConfigured() || !supabase) {
-      const mockOpp = {
-        id: `opp-${Date.now()}`,
-        title: title.trim(),
-        company: company.trim(),
-        type: type || "Hackathon",
-        location: location || "Remote",
-        stipendOrPrize: stipendPrize || "Exciting Prizes",
-        deadline: deadline || "Upcoming",
-        daysRemaining: 14,
-        tags: parsedTags,
-        description: description || "",
-        eligibility: eligibility || "Open to all students",
-        applyUrl,
-        isFeatured: false,
-        status: "PENDING" as const,
-        isApproved: false,
-      };
-      return NextResponse.json({
-        data: mockOpp,
-        source: "mock",
-        isConnected: false,
-        message: "🛡️ Opportunity submitted for moderator authorization! It will go live once approved by the Council.",
-      });
+      return NextResponse.json(
+        { error: "Supabase database is not configured in .env.local" },
+        { status: 400 }
+      );
     }
 
     let insertRes = await supabase
