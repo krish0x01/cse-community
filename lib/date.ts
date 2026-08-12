@@ -9,12 +9,16 @@
 export function formatRelativeTime(rawDate?: string | number | Date | null): string {
   if (!rawDate) return "Just now";
 
-  // If already a pre-formatted relative string, return as is
-  if (
-    typeof rawDate === "string" &&
-    (rawDate.includes("ago") || rawDate === "Just now" || rawDate.includes("Just authorized"))
-  ) {
-    return rawDate;
+  if (typeof rawDate === "string") {
+    const trimmed = rawDate.trim();
+    // Return pre-formatted relative strings as-is
+    if (trimmed.includes("ago") || trimmed === "Just now" || trimmed.includes("Just authorized")) {
+      return trimmed;
+    }
+    // If it's a date-only string without time (e.g. "Aug 12", "March 15", "Oct 24, 2026")
+    if (/^[A-Za-z]{3,9}\s+\d{1,2}(,\s+\d{4})?$/.test(trimmed)) {
+      return trimmed;
+    }
   }
 
   const d = new Date(rawDate);

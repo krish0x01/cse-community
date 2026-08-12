@@ -99,22 +99,12 @@ export async function GET(request: Request) {
       status: item.status || (item.is_approved ? "APPROVED" : "PENDING"),
       isApproved: item.is_approved ?? (item.status === "APPROVED" || Boolean(item.isApproved)),
       tags: item.tags || [],
-      timestamp: item.created_at
-        ? new Date(item.created_at).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          })
-        : item.timestamp || "Recently",
+      timestamp: item.created_at || item.timestamp || new Date().toISOString(),
       comments: (item.comments || []).map((c) => ({
         id: c.id,
         author: c.author,
         text: c.text,
-        timestamp: c.created_at
-          ? new Date(c.created_at).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            })
-          : "Recently",
+        timestamp: c.created_at || new Date().toISOString(),
       })),
     }));
 

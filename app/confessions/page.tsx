@@ -137,6 +137,7 @@ export default function ConfessionsPage() {
             status?: string;
             is_approved?: boolean;
             tags?: string[];
+            created_at?: string;
           }
           const updated = payload.new as RawUpdate;
           const isNowApproved = updated.is_approved === true || updated.status === "APPROVED";
@@ -167,7 +168,7 @@ export default function ConfessionsPage() {
                   likes: updated.likes ?? 0,
                   isTrending: updated.is_trending ?? false,
                   tags: updated.tags || [],
-                  timestamp: "Just authorized",
+                  timestamp: updated.created_at || new Date().toISOString(),
                   comments: [],
                   status: "APPROVED",
                   isApproved: true,
